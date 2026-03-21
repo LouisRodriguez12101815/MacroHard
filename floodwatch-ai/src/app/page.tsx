@@ -301,9 +301,6 @@ export default function Dashboard() {
                       onClose={() => setSelectedIncidentId(null)}
                     />
                  </div>
-                 <div className="shrink-0 p-3 border-t border-slate-800 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
-                    <ServiceDispatchPanel incident={selectedIncident} />
-                 </div>
                </div>
              ) : (
                <div className="flex-1 overflow-hidden p-4">
