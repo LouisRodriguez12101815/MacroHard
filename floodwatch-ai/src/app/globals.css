@@ -44,3 +44,40 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #F79E1B;
 }
+
+/* ── Google Maps InfoWindow Dark Mode Fix ────────────────────────────────── */
+
+/* Force the outer container and tail to match the dark theme */
+.gm-style .gm-style-iw-c {
+  background-color: #0f172a !important; /* bg-slate-900 */
+  border: 1px solid rgba(255, 95, 0, 0.3) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7) !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+}
+
+/* Hide the default white background for the content container */
+.gm-style .gm-style-iw-d {
+  overflow: hidden !important;
+  color: #f8fafc !important;
+}
+
+/* Fix the close button to be white-on-dark */
+.gm-style .gm-style-iw-t::after {
+  background: #0f172a !important;
+  box-shadow: -1px 1px 2px rgba(0,0,0,0.5);
+  border-left: 1px solid rgba(255, 95, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 95, 0, 0.3);
+}
+
+/* Hide the default white close button background if it exists */
+.gm-ui-hover-effect {
+  top: 0 !important;
+  right: 0 !important;
+  background-color: rgba(255,255,255,0.1) !important;
+  border-radius: 0 8px 0 8px !important;
+}
+
+.gm-ui-hover-effect > span {
+  background-color: #fff !important;
+}
