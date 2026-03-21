@@ -11,14 +11,13 @@ import { NextResponse } from 'next/server';
 import { insertManyReadings, insertPattern, getReadingSummary, getDbStats, SensorReadingInsert } from '@/lib/db';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const BASE = 'http://localhost:3000';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-async function collectReadings(): Promise<SensorReadingInsert[]> {
+async function collectReadings(origin: string): Promise<SensorReadingInsert[]> {
   const readings: SensorReadingInsert[] = [];
 
   try {
-    const res = await fetch(`${BASE}/api/sensors/noaa-tides`);
+    const res = await fetch(`${origin}/api/sensors/noaa-tides`);
     if (res.ok) {
       const d = await res.json();
       if (d.waterLevel) readings.push({ sensor_id: 'noaa-8723214', sensor_type: 'tide', metric: 'water_level', value: d.waterLevel.value, unit: 'ft', location: 'Virginia Key' });
@@ -32,7 +31,7 @@ async function collectReadings(): Promise<SensorReadingInsert[]> {
   } catch {}
 
   try {
-    const res = await fetch(`${BASE}/api/sensors/nexrad-rain`);
+    const res = await fetch(`${origin}/api/sensors/nexrad-rain`);
     if (res.ok) {
       const d = await res.json();
       for (const a of (d.areas || [])) {
@@ -42,7 +41,7 @@ async function collectReadings(): Promise<SensorReadingInsert[]> {
   } catch {}
 
   try {
-    const res = await fetch(`${BASE}/api/sensors/miami-beach-pumps`);
+    const res = await fetch(`${origin}/api/sensors/miami-beach-pumps`);
     if (res.ok) {
       const d = await res.json();
       readings.push({ sensor_id: 'mb-pumps', sensor_type: 'infrastructure', metric: 'pumps_online', value: d.online, unit: 'count', location: 'Miami Beach' });
@@ -51,7 +50,7 @@ async function collectReadings(): Promise<SensorReadingInsert[]> {
   } catch {}
 
   try {
-    const res = await fetch(`${BASE}/api/sensors/air-quality`);
+    const res = await fetch(`${origin}/api/sensors/air-quality`);
     if (res.ok) {
       const d = await res.json();
       if (d.aqi) readings.push({ sensor_id: 'waqi-6298', sensor_type: 'air_quality', metric: 'aqi', value: d.aqi.value, unit: 'AQI', location: 'Miami Fire Station #5' });
@@ -60,7 +59,7 @@ async function collectReadings(): Promise<SensorReadingInsert[]> {
   } catch {}
 
   try {
-    const res = await fetch(`${BASE}/api/sensors/metar`);
+    const res = await fetch(`${origin}/api/sensors/metar`);
     if (res.ok) {
       const d = await res.json();
       for (const s of (d.stations || []).filter((s: any) => s.status === 'online')) {
@@ -85,7 +84,7 @@ async function detectPatterns(): Promise<void> {
 
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const result = await model.generateContent([
       'You are a weather pattern detection AI for Miami-Dade County.',
@@ -116,9 +115,10 @@ async function detectPatterns(): Promise<void> {
   } catch {}
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
-    const readings = await collectReadings();
+    const { origin } = new URL(req.url);
+    const readings = await collectReadings(origin);
     if (readings.length > 0) insertManyReadings(readings);
 
     // Run pattern detection every ingest cycle

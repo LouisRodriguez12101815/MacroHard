@@ -19,8 +19,6 @@
 
 import { NextResponse } from 'next/server';
 
-const BASE = 'http://localhost:3000';
-
 interface ZoneScore {
   zone: string;
   name: string;
@@ -42,15 +40,16 @@ function scoreToLevel(score: number): { level: 'LOW' | 'MODERATE' | 'HIGH' | 'CR
   return { level: 'LOW', color: '#10b981' };                         // Green
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { origin } = new URL(req.url);
     // Fetch all sensors in parallel
     const [tides, rain, pumps, sewer, metar] = await Promise.all([
-      fetch(`${BASE}/api/sensors/noaa-tides`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${BASE}/api/sensors/nexrad-rain`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${BASE}/api/sensors/miami-beach-pumps`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${BASE}/api/sensors/sewer`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${BASE}/api/sensors/metar`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${origin}/api/sensors/noaa-tides`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${origin}/api/sensors/nexrad-rain`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${origin}/api/sensors/miami-beach-pumps`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${origin}/api/sensors/sewer`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${origin}/api/sensors/metar`).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
 
     // Extract global sensor values
