@@ -41,8 +41,8 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
             {incident.severity === 'CRITICAL' && <AlertTriangle className="w-3 h-3" />}
             {incident.severity}
           </span>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 text-white hover:bg-slate-800 rounded-lg transition-colors bg-slate-800/50 border border-slate-700/50 group" aria-label="Close panel">
+            <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
         </div>
         <h2 className="text-xl font-bold text-white leading-tight">{incident.title}</h2>
