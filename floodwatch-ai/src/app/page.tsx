@@ -6,6 +6,7 @@ import { LiveSensorFeed } from '@/components/LiveSensorFeed';
 import { useMobileView } from '@/components/AppShell';
 import { IncidentQueue } from '@/components/IncidentQueue';
 import { IncidentDetailPanel } from '@/components/IncidentDetailPanel';
+import { ServiceDispatchPanel } from '@/components/ServiceDispatchPanel';
 import { FloodMap } from '@/components/FloodMap';
 import { Shield, PlayCircle, Activity, ChevronRight, StopCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -292,11 +293,18 @@ export default function Dashboard() {
           {/* Right panel — hidden in mobile */}
           <div className={`flex flex-col bg-slate-900 z-20 shadow-2xl shrink-0 ${mobileView ? 'hidden' : 'w-[380px]'}`}>
              {selectedIncident ? (
-               <IncidentDetailPanel 
-                 incident={selectedIncident} 
-                 sensors={state.sensors}
-                 onClose={() => setSelectedIncidentId(null)}
-               />
+               <div className="flex-1 flex flex-col min-h-0 bg-slate-950">
+                 <div className="flex-1 overflow-hidden">
+                    <IncidentDetailPanel 
+                      incident={selectedIncident} 
+                      sensors={state.sensors}
+                      onClose={() => setSelectedIncidentId(null)}
+                    />
+                 </div>
+                 <div className="p-3 border-t border-slate-800 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+                    <ServiceDispatchPanel incident={selectedIncident} />
+                 </div>
+               </div>
              ) : (
                <div className="flex-1 overflow-hidden p-4">
                  <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">

@@ -93,6 +93,7 @@ export interface FloodIncident {
   }[];
   recommendedActions: RecommendedAction[];
   agentTraces: AgentTrace[]; // [NEW] Track AI logic footprint
+  dispatches: ServiceDispatch[]; // [NEW] Multi-agency coordination
 }
 
 export interface CitizenAlert {
@@ -102,6 +103,19 @@ export interface CitizenAlert {
   issuedAt: string;
   audience?: 'CITIZEN' | 'OPERATIONS';
   status: 'DRAFT' | 'PUBLISHED';
+}
+
+export type DispatchStatus = 'SENT' | 'ACKNOWLEDGED' | 'ACTION_IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+
+export interface ServiceDispatch {
+  id: string;
+  serviceName: '911_POLICE' | '311_MUNICIPAL' | 'GOOGLE_MAPS' | 'POWER_UTILITY' | 'CELL_PROVIDERS' | 'INSURANCE';
+  status: DispatchStatus;
+  sentAt: string;
+  updatedAt: string;
+  message: string;
+  responseMessage?: string;
+  actionTaken?: string;
 }
 
 export interface ClaimEvidenceEvent {

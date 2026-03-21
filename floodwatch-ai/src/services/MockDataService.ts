@@ -109,7 +109,8 @@ export class MockDataService {
             { type: 'TRAFFIC', id: 'trf-b1', description: 'Sudden congestion mapped', confidence: 'LOW' }
           ],
           recommendedActions: [],
-          agentTraces: []
+          agentTraces: [],
+          dispatches: []
         });
         this.evidence.push({
           id: `ev-t1`, incidentId: incId, timestamp: new Date().toISOString(), type: 'SENSOR_TELEMETRY', description: 'Initial backflow detected', data: { level: 3.5, riseRate: 1.2 }
@@ -168,9 +169,73 @@ export class MockDataService {
           this.alerts.push(...pubRes.newAlerts);
           this.evidence.push(...pubRes.newEvidence);
           incident.agentTraces.push(pubRes.trace);
+
+          // Trigger Multi-Agency Dispatches
+          this.triggerServiceDispatches(incident);
         }
       }
+      
+      // Progress active dispatches
+      this.updateDispatches(incident);
     }
+  }
+
+  private triggerServiceDispatches(incident: FloodIncident) {
+    if (incident.dispatches && incident.dispatches.length > 0) return;
+
+    const services: Array<'911_POLICE' | '311_MUNICIPAL' | 'GOOGLE_MAPS' | 'POWER_UTILITY' | 'CELL_PROVIDERS' | 'INSURANCE'> = [
+      '911_POLICE', '311_MUNICIPAL', 'GOOGLE_MAPS', 'POWER_UTILITY', 'CELL_PROVIDERS', 'INSURANCE'
+    ];
+
+    incident.dispatches = services.map(service => ({
+      id: `ds-${service}-${Date.now()}`,
+      serviceName: service,
+      status: 'SENT',
+      sentAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      message: this.getDispatchMessage(service, incident)
+    }));
+  }
+
+  private getDispatchMessage(service: string, incident: FloodIncident): string {
+     switch(service) {
+        case '911_POLICE': return `CRITICAL: Major flooding at Brickell. Dispatch units for road barricades.`;
+        case '311_MUNICIPAL': return `Sewer backup confirmed. Dispatch WASD teams for clean-out.`;
+        case 'GOOGLE_MAPS': return `PRIORITY: Reroute all traffic away from Brickell underpass.`;
+        case 'POWER_UTILITY': return `Subsurface flooding detected. Assess transformers in zone ${incident.location.zoneId}.`;
+        case 'CELL_PROVIDERS': return `Emergency Alert: Notify subscribers of active street flooding.`;
+        case 'INSURANCE': return `Factual incident logged. Claims validation telemetry attached.`;
+        default: return `Incident reported.`;
+     }
+  }
+
+  private updateDispatches(incident: FloodIncident) {
+    if (!incident.dispatches) return;
+    
+    incident.dispatches.forEach(d => {
+      // Simulate random response delays
+      if (d.status === 'SENT' && Math.random() > 0.7) {
+        d.status = 'ACKNOWLEDGED';
+        d.updatedAt = new Date().toISOString();
+        d.responseMessage = `Received. Allocating resources.`;
+      } else if (d.status === 'ACKNOWLEDGED' && Math.random() > 0.8) {
+        d.status = 'ACTION_IN_PROGRESS';
+        d.updatedAt = new Date().toISOString();
+        d.actionTaken = this.getServiceAction(d.serviceName);
+      }
+    });
+  }
+
+  private getServiceAction(service: string): string {
+     switch(service) {
+        case '911_POLICE': return "Police units on site. Barricades deployed.";
+        case '311_MUNICIPAL': return "Vacuum trucks clearing stormwater inlets.";
+        case 'GOOGLE_MAPS': return "Traffic rerouted via 5th St.";
+        case 'POWER_UTILITY': return "Transponders monitored. No faults reported.";
+        case 'CELL_PROVIDERS': return "WEA broadcast to active subscribers.";
+        case 'INSURANCE': return "Telemetry evidence locked for audit.";
+        default: return "Assessment in progress.";
+     }
   }
 
   // Orchestrator loop
