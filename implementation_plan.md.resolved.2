@@ -1,0 +1,30 @@
+# FloodWatch AI V3 Implementation Plan
+
+## Goal Description
+Refactor the deterministic logic of the FloodWatch AI platform into a transparent, multi-agent AI pipeline. This will transform the app from a simple dashboard into an explicit AI system that monitors, verifies, decides, and acts, fully exposing its reasoning trace to the user.
+
+## Proposed Changes
+
+### **1. LLM Provider Abstraction**
+- **[NEW]** `src/lib/llm-provider.ts`: A pluggable interface defining `generateIncidentSummary`, `generateActionWording`, and `generateReasoning`. It will default to template-string based fallbacks to keep the app runnable without API keys, but is structured so an LLM client (Nemotron/Gemini) can be easily swapped in.
+
+### **2. Explicit Agent Modules**
+Create a new directory `src/agents/` containing isolated classes/functions for each responsibility:
+- **[NEW]** `VisionAgent.ts`: Analyzes camera state/images to detect standing water or blocked lanes, outputting confidence scores and summaries.
+- **[NEW]** `SensorFusionAgent.ts`: Correlates sewer sensor telemetry, traffic conditions, and weather to compute [ZoneRisk](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#52-60) and emit early warnings.
+- **[NEW]** `VerificationAgent.ts`: Evaluates evidence across sources to determine if an incident meets the threshold for `VERIFIED` status, producing a detailed reasoning trace.
+- **[NEW]** `DecisionAgent.ts`: Consumes verified incidents and outputs structured [RecommendedAction](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#61-65) plans prioritized for citizen safety.
+- **[NEW]** `PublishingAgent.ts`: Handles the final mile, formatting data into [CitizenAlert](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#85-93) and [ClaimEvidenceEvent](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#94-103) outputs.
+
+### **3. Data Model Updates**
+- **[MODIFY]** [src/types/schemas.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts): Add an `AgentTrace` interface mapping `{ agentName, inputScope, outputSummary, reasoning, timestamp }`. Add an `agentTraces` array to the [FloodIncident](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#66-84) model to strictly record the pipeline's execution.
+
+### **4. Engine Refactoring**
+- **[MODIFY]** [src/services/MockDataService.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts): Remove the inline algorithmic logic from [calculateZoneRisk](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#83-128) and [verifyIncidents](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#129-164). Instead, [tick()](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#235-250) will pass current state snapshots into the Agents sequentially (Vision -> SensorFusion -> Verification -> Decision -> Publishing) and collect their output and traces.
+
+### **5. UI - Reasoning Trace Panel**
+- **[MODIFY]** [src/components/IncidentDetailPanel.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/IncidentDetailPanel.tsx): Introduce a new layout section (or tab) titled "AI Reasoning Trace". This will render a step-by-step visual log of every agent that processed the incident, showing exactly what data it saw, what it concluded, and why it triggered the next step.
+
+## Verification
+- Engage "Demo Mode".
+- Watch the [IncidentDetailPanel](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/IncidentDetailPanel.tsx#11-150) dynamically populate the new "AI Reasoning Trace" log as the `VisionAgent`, `SensorFusionAgent`, and `VerificationAgent` sequentially process the simulated flood.

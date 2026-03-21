@@ -1,0 +1,47 @@
+# FloodWatch AI Implementation Plan
+
+## Goal Description
+Build a production-style real-time municipal flood intelligence platform for Miami-Dade County. The application will aggregate data from multiple public sources (webcams, traffic, weather, flood sensors, and mock sewer data), validate incidents across these sources, and recommend actions via a dark-mode operations dashboard.
+
+## Proposed Changes
+The application will be built as a Next.js (App Router) full-stack application using TypeScript, TailwindCSS, and Server-Sent Events (SSE) for real-time reactivity.
+
+### **1. Core System Setup**
+- [NEW] Initialize a Next.js App Router project (`floodwatch-ai`) locally in the workspace folder.
+- [NEW] Setup UI libraries: `lucide-react` for icons, `recharts` for charting, `leaflet` and `react-leaflet` for map rendering.
+
+### **2. Domain Models & Architecture**
+Create domain types and schemas in `src/types/`:
+- `schemas.ts`: Typings for `Incident`, `ZoneRisk`, `Camera`, `SensorReading`, `Alert`, and `ClaimEvidence`.
+
+### **3. Backend Services (Next.js Edge/API Routes)**
+Implement Next.js API Routes to serve and generate mock real-time data:
+- `/api/events` (SSE pipeline): Pushes live updates of system state (sensors, incidents, cameras) to the frontend continuously.
+- `src/services/MockDataService.ts`: Mocks integrations for webcam frames, weather anomalies, traffic congestion, and flood sensors. Validates issues across sources to generate high-confidence incidents.
+
+### **4. UI Components**
+Develop reusable dashboard components in `src/components/`:
+- **Dashboard Layout:** `Layout.tsx`, `Sidebar.tsx`, `Header.tsx` (dark, modern aesthetic).
+- **Map View:** `FloodMap.tsx` using Leaflet to plot zones (red/yellow/green risks), active cameras, and sensors.
+- **Incident Panel:** `IncidentDetailPanel.tsx` showing snapshot images, sensor trend charts (recharts), validation info, and AI-driven recommended actions.
+- **Lists & Queues:** `IncidentQueue.tsx`, `CitizenAlertsList.tsx`.
+- **Claims View:** `EvidenceTimeline.tsx`.
+
+### **5. Integration Context**
+- `src/context/RealtimeContext.tsx`: Manages the SSE connection and broadcasts state updates (active incidents, risk scores) to all components.
+
+### **6. Pages**
+- `/` (Operations Dashboard)
+- `/alerts` (Citizen Alerts View)
+- `/operations` (County Operations Queue)
+- `/claims` (Evidence Timeline)
+
+## Verification Plan
+### Automated Tests
+- N/A for this MVP build, but TypeScript will guarantee strict types.
+
+### Manual Verification
+- Start the Next.js dev server locally (`npm run dev`).
+- Verify the SSE connection stream is working and the UI reacts to real-time incident generation.
+- Toggle "Demo Mode" to verify event correlation and incident propagation on the map.
+- Test that Leaflet correctly renders the map with Miami-Dade coordinates.

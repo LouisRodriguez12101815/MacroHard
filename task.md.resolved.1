@@ -1,0 +1,33 @@
+# FloodWatch AI Task Plan
+
+- [/] Project Setup
+  - [ ] Initialize Next.js project with TypeScript and Tailwind CSS
+  - [ ] Set up Leaflet for map UI
+  - [ ] Set up Recharts for charts
+  - [ ] Define folder structure and architectural boundaries
+- [ ] Domain Models & Interfaces
+  - [ ] Define `Incident`, `ZoneRisk`, `Camera`, `SensorReading`, `Alert`, `ClaimEvidence`
+- [ ] Backend Services (Next.js API Routes & Services)
+  - [ ] Webcam service (mock)
+  - [ ] Weather service (mock/live)
+  - [ ] Traffic service (mock)
+  - [ ] Flood/water service (mock)
+  - [ ] Sewer sensor service (mock)
+  - [ ] Risk scoring service
+  - [ ] Verification service
+  - [ ] Decision service
+  - [ ] Alert publishing service
+  - [ ] Real-time event pipeline (SSE endpoint)
+- [ ] Frontend Core Components
+  - [ ] Layout and Navigation (dark mode dashboard aesthetic)
+  - [ ] Real-time context provider (SSE listener)
+- [ ] Operations Dashboard
+  - [ ] Flood Risk Map (Leaflet) with zones, cameras, sensors, and incidents
+  - [ ] Active Incidents List/Queue
+  - [ ] Incident Detail Panel (snapshots, trends, weather, confidence score, suggested actions)
+- [ ] Additional Views
+  - [ ] Citizen Alert View
+  - [ ] Claims-validation Evidence Timeline
+- [ ] Final Polish
+  - [ ] "Demo mode" toggle to simulate flooding
+  - [ ] README setup instructions

@@ -1,0 +1,18 @@
+# FloodWatch AI V2 Task Plan
+
+- [x] Domain & Backend Restructuring
+  - [x] Implement enhanced domain models ([TrafficIncident](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#21-29), [WeatherAlert](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#30-36), [SewerSensorReading](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#43-51), etc.)
+  - [x] Refactor [MockDataService](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#12-265) to act as a real state engine
+- [x] Risk Scoring & Verification Logic
+  - [x] Build deterministic risk scoring engine combining multiple sources
+  - [x] Implement incident verification rules (source consensus logic)
+  - [x] Add explainability strings for AI actions and scores
+- [x] API Endpoints
+  - [x] GET `/api/zones`, `/api/incidents`, `/api/alerts`
+  - [x] POST `/api/demo` to trigger scenarios
+- [x] Scenario Simulation Engine
+  - [x] Create staged demo event simulation (weather -> sensors -> traffic -> webcam -> verification)
+  - [x] Seed expanded Miami-Dade locations (coastal, underpasses)
+- [/] UI Updates
+  - [/] Wire UI to new explicit `/api/*` structures alongside SSE
+  - [ ] Display explanation strings on incident panels and queue

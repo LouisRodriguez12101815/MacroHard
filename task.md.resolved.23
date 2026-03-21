@@ -1,0 +1,16 @@
+# FloodWatch AI V4 - Data Adapters & Diagnostics
+
+- [ ] Core Adapter Architecture
+  - [ ] Define `DataSourceMode` (`LIVE`, `MOCK`, `DEMO`) and `AdapterConfig`
+  - [ ] Create `BaseAdapter` interface for standardizing data fetching, error handling, and retries
+- [ ] Implement Specific Adapters (`src/adapters/`)
+  - [ ] `TrafficAdapter` (targeting FDOT SunGuide)
+  - [ ] `WebcamAdapter` (targeting Miami-Dade Traffic Cameras)
+  - [ ] `WeatherAdapter` (targeting NWS API)
+  - [ ] `WaterLevelAdapter` (targeting NOAA/USGS)
+  - [ ] `SewerAdapter` (Mock/Demo only)
+- [ ] Refactor State Engine
+  - [ ] Update [MockDataService](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#14-224) (rename to `DataOrchestrator`) to poll adapters based on central config
+- [ ] Diagnostics & UI
+  - [ ] Add global feed health indicators directly to the Sidebar or Navbar
+  - [ ] Build `/diagnostics` page to display adapter status, mode, last fetched, and raw payload snippets

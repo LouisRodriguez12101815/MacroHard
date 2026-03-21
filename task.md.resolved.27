@@ -1,0 +1,16 @@
+# FloodWatch AI V4 - Data Adapters & Diagnostics
+
+- [x] Core Adapter Architecture
+  - [x] Define [DataSourceMode](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/config/sources.ts#1-2) (`LIVE`, `MOCK`, `DEMO`) and [AdapterConfig](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/config/sources.ts#3-10)
+  - [x] Create [BaseAdapter](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/adapters/BaseAdapter.ts#13-94) interface for standardizing data fetching, error handling, and retries
+- [x] Implement Specific Adapters (`src/adapters/`)
+  - [x] [TrafficAdapter](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/adapters/TrafficAdapter.ts#4-71) (targeting FDOT SunGuide)
+  - [x] [WebcamAdapter](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/adapters/WebcamAdapter.ts#4-44) (targeting Miami-Dade Traffic Cameras)
+  - [x] [WeatherAdapter](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/adapters/WeatherAdapter.ts#4-75) (targeting NWS API)
+  - [x] [WaterLevelAdapter](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/adapters/WaterLevelAdapter.ts#13-44) (targeting NOAA/USGS)
+  - [x] [SewerAdapter](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/adapters/SewerAdapter.ts#4-77) (Mock/Demo only)
+- [x] Refactor State Engine
+  - [x] Update [MockDataService](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#19-215) (rename to `DataOrchestrator`) to poll adapters based on central config
+- [x] Diagnostics & UI
+  - [x] Add global feed health indicators directly to the Sidebar or Navbar
+  - [x] Build `/diagnostics` page to display adapter status, mode, last fetched, and raw payload snippets

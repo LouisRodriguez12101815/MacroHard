@@ -1,0 +1,14 @@
+# FloodWatch AI V5 - Hackathon Demo Polish
+
+- [x] Demo Experience Enhancements
+  - [x] Add Premium Value Proposition Header
+  - [x] Build "Demo Playback Timeline" based on `demoTickCount`
+  - [x] Add prominent "Trigger Flood Event" action
+- [x] UI Polish & Animations
+  - [x] Implement pulsing/glowing animations for state transitions (Monitoring -> Elevated -> Verified)
+  - [x] Build Executive Summary Card for `VERIFIED` incidents
+  - [x] Global styling polish (responsive layout, spacing, premium colors)
+- [x] Core Engine State Export Updates
+  - [x] Export `demoTickCount` in `/api/operations` API to drive UI Timeline
+- [x] Documentation
+  - [x] Rewrite [README.md](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/README.md) for hackathon judges (Setup instructions, What to click, Value Prop)

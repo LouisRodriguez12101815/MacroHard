@@ -1,0 +1,35 @@
+# FloodWatch AI V5 Implementation Plan
+
+## Goal Description
+Transform the current functional application into a highly polished, premium "Hackathon-Ready" presentation. The UI must clearly articulate its value proposition, provide a visually striking execution timeline of the AI logic, and guide judges flawlessly through the `DEMO` scenario using animations and an Executive Summary.
+
+## Proposed Changes
+
+### **1. Engine Timeline Export**
+- **[MODIFY]** [src/services/MockDataService.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts): Export the `demoTickCount` integer inside [getSnapshot()](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#190-203) so the Next.js frontend can natively track the exact stage of the scenario.
+- **[MODIFY]** [src/context/RealtimeContext.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/context/RealtimeContext.tsx) & [schemas.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts): Add `demoTickCount` to the [AppState](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/context/RealtimeContext.tsx#6-16) interface.
+
+### **2. Demo Playback Timeline & Header**
+- **[MODIFY]** [src/app/page.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/app/page.tsx) (Operations Dashboard): 
+  - Add a premium glassmorphic header declaring the platform's Value Proposition ("Real-time Multi-Agent Municipal Flood Intelligence...").
+  - Introduce a visual progress bar / step-tracker that mounts when `isDemoMode` is true. It will map `demoTickCount` (0->7) onto specific human-readable stages: "Monitoring", "Weather Anomaly", "Sensor Spikes & Traffic Degradation", "Visual Verification & AI Action".
+  - Move the "Trigger Demo" button out of the sidebar and into this prominent banner for a clear one-click judge experience.
+
+### **3. UI Polish and Status Animations**
+- **[MODIFY]** [src/components/MapClient.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/MapClient.tsx) & [IncidentQueue.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/IncidentQueue.tsx): Deepen the dark mode palette. Add strong CSS pulsing (`animate-pulse`) and red drop-shadows transitions when `zoneRisk` elevates or an incident strikes `VERIFIED` status.
+
+### **4. Executive Summary Card**
+- **[MODIFY]** [src/components/IncidentDetailPanel.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/IncidentDetailPanel.tsx): When an incident reaches `VERIFIED` status and generates Recommended Actions, render a distinct, visually elevated "Executive Summary" card at the top. This card will summarize:
+  - **What Happened** (Title & Severity)
+  - **Sources** (e.g. "Confirmed via 3 independent telemetry streams")
+  - **Actions Taken** 
+  - **Impact / Why it matters** ("Protects residents by reducing response latency by 85%").
+
+### **5. README Polish**
+- **[MODIFY]** [README.md](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/README.md): Rewrite the entire README to serve as a high-impact Hackathon Pitch. Include exact setup commands, a 3-step guide on what to click during the demo, and the architectural bullet points (Agents, Deterministic Fallbacks, Vercel ready).
+
+## Verification
+- Start `npm run dev`.
+- Ensure the premium header and prominent "Trigger Flood Event" button are visible.
+- Click the button; verify the step-tracker progresses smoothly, triggering pulsing animations across the UI.
+- Verify the Executive Summary Card appears upon completion.

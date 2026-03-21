@@ -1,0 +1,16 @@
+# FloodWatch AI V3 - Agentic Architecture
+
+- [x] LLM Provider Abstraction
+  - [x] Create [LLMProvider](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/lib/llm-provider.ts#8-29) interface with deterministic fallbacks
+- [x] Agent Modules (`src/agents/`)
+  - [x] Implement [VisionAgent](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/agents/VisionAgent.ts#3-34)
+  - [x] Implement [SensorFusionAgent](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/agents/SensorFusionAgent.ts#4-71)
+  - [x] Implement [VerificationAgent](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/agents/VerificationAgent.ts#3-35)
+  - [x] Implement [DecisionAgent](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/agents/DecisionAgent.ts#4-44)
+  - [x] Implement [PublishingAgent](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/agents/PublishingAgent.ts#4-54)
+- [x] Core Engine Refactor
+  - [x] Update [schemas.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts) to include [AgentTrace](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#53-61) models
+  - [x] Refactor [MockDataService](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#14-224) to orchestrate agents instead of using inline logic
+- [x] UI - AI Reasoning Trace
+  - [x] Build "AI Reasoning Trace" visualizer in [IncidentDetailPanel](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/IncidentDetailPanel.tsx#13-190)
+  - [x] Update dashboard real-time context to sync traces
