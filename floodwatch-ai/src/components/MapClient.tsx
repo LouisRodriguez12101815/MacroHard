@@ -368,6 +368,7 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
       <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
         <Map
           key={activeFocal.id}
+          mapId="8e0a97af9386fef" // Required for AdvancedMarker
           defaultCenter={activeFocal.center}
           defaultZoom={activeFocal.zoom}
           gestureHandling="greedy"
