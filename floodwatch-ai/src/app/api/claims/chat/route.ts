@@ -25,24 +25,23 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getReadingSummary, getRecentPatterns, getDbStats } from '@/lib/db';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const BASE = 'http://localhost:3000';
 
 // ── Sensor Evidence Gathering ───────────────────────────────────────────────
 
-async function gatherSensorEvidence(): Promise<Record<string, any>> {
+async function gatherSensorEvidence(origin: string): Promise<Record<string, any>> {
   const evidence: Record<string, any> = {};
 
   const fetches = [
-    { key: 'noaa_tides', url: `${BASE}/api/sensors/noaa-tides` },
-    { key: 'nexrad_rain', url: `${BASE}/api/sensors/nexrad-rain` },
-    { key: 'miami_beach_pumps', url: `${BASE}/api/sensors/miami-beach-pumps` },
-    { key: 'wasd_sewer', url: `${BASE}/api/sensors/sewer` },
-    { key: 'air_quality', url: `${BASE}/api/sensors/air-quality` },
-    { key: 'metar', url: `${BASE}/api/sensors/metar` },
-    { key: 'flood_zones', url: `${BASE}/api/sensors/311-zones` },
-    { key: 'ndbc_coastal', url: `${BASE}/api/sensors/ndbc-coastal` },
-    { key: 'ports_currents', url: `${BASE}/api/sensors/ports-currents` },
-    { key: 'miami_beach_tides', url: `${BASE}/api/sensors/miami-beach-tides` },
+    { key: 'noaa_tides', url: `${origin}/api/sensors/noaa-tides` },
+    { key: 'nexrad_rain', url: `${origin}/api/sensors/nexrad-rain` },
+    { key: 'miami_beach_pumps', url: `${origin}/api/sensors/miami-beach-pumps` },
+    { key: 'wasd_sewer', url: `${origin}/api/sensors/sewer` },
+    { key: 'air_quality', url: `${origin}/api/sensors/air-quality` },
+    { key: 'metar', url: `${origin}/api/sensors/metar` },
+    { key: 'flood_zones', url: `${origin}/api/sensors/311-zones` },
+    { key: 'ndbc_coastal', url: `${origin}/api/sensors/ndbc-coastal` },
+    { key: 'ports_currents', url: `${origin}/api/sensors/ports-currents` },
+    { key: 'miami_beach_tides', url: `${origin}/api/sensors/miami-beach-tides` },
   ];
 
   await Promise.all(fetches.map(async ({ key, url }) => {
@@ -164,11 +163,12 @@ export async function POST(req: Request) {
     }
 
     // Gather sensor evidence on every request (they're cached server-side)
-    const evidence = await gatherSensorEvidence();
+    const { origin } = new URL(req.url);
+    const evidence = await gatherSensorEvidence(origin);
     const evidenceSummary = formatEvidenceSummary(evidence);
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // Build chat with sensor evidence injected
     const chatHistory = [
@@ -243,7 +243,7 @@ Based on the citizen's description, the live sensor data, and any historical evi
         summary: evidenceSummary,
         raw: evidence,
       } : null,
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
     });
   } catch (err) {
     console.error('[API /claims/chat] Error:', err);

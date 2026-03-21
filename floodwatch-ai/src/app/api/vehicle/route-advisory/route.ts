@@ -13,11 +13,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-async function gatherHazards(): Promise<string[]> {
+async function gatherHazards(origin: string): Promise<string[]> {
   const hazards: string[] = [];
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/nexrad-rain');
+    const res = await fetch(`${origin}/api/sensors/nexrad-rain`);
     if (res.ok) {
       const d = await res.json();
       for (const a of (d.areas || [])) {
@@ -29,7 +29,7 @@ async function gatherHazards(): Promise<string[]> {
   } catch {}
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/noaa-tides');
+    const res = await fetch(`${origin}/api/sensors/noaa-tides`);
     if (res.ok) {
       const d = await res.json();
       if (d.waterLevel?.value > 1.5) {
@@ -42,7 +42,7 @@ async function gatherHazards(): Promise<string[]> {
   } catch {}
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/miami-beach-pumps');
+    const res = await fetch(`${origin}/api/sensors/miami-beach-pumps`);
     if (res.ok) {
       const d = await res.json();
       if (d.offline > 3) {
@@ -52,7 +52,7 @@ async function gatherHazards(): Promise<string[]> {
   } catch {}
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/sewer');
+    const res = await fetch(`${origin}/api/sensors/sewer`);
     if (res.ok) {
       const d = await res.json();
       const ssoCount = (d.features || []).filter((f: any) => f.attributes?.SSO === 'Y').length;
@@ -70,7 +70,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { origin, destination } = body;
 
-    const hazards = await gatherHazards();
+    const { origin: hostOrigin } = new URL(req.url);
+    const hazards = await gatherHazards(hostOrigin);
     const hazardSummary = hazards.length > 0 ? hazards.join('\n') : 'No active hazards detected.';
 
     // AGL-formatted response
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
     // Gemini advisory
     if (GEMINI_API_KEY) {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = [
         'You are a vehicle navigation safety AI for the FloodWatch system in Miami-Dade County.',

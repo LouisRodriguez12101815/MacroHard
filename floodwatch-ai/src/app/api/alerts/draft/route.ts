@@ -10,11 +10,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
-async function fetchSensorSummary(): Promise<string> {
+async function fetchSensorSummary(origin: string): Promise<string> {
   const lines: string[] = [];
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/noaa-tides');
+    const res = await fetch(`${origin}/api/sensors/noaa-tides`);
     if (res.ok) {
       const d = await res.json();
       if (d.waterLevel) lines.push(`NOAA Virginia Key: Water level ${d.waterLevel.value} ft`);
@@ -23,7 +23,7 @@ async function fetchSensorSummary(): Promise<string> {
   } catch { /* skip */ }
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/air-quality');
+    const res = await fetch(`${origin}/api/sensors/air-quality`);
     if (res.ok) {
       const d = await res.json();
       if (d.aqi) lines.push(`Air Quality: AQI ${d.aqi.value} (${d.aqi.level})`);
@@ -31,7 +31,7 @@ async function fetchSensorSummary(): Promise<string> {
   } catch { /* skip */ }
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/nexrad-rain');
+    const res = await fetch(`${origin}/api/sensors/nexrad-rain`);
     if (res.ok) {
       const d = await res.json();
       for (const a of (d.areas || [])) {
@@ -41,7 +41,7 @@ async function fetchSensorSummary(): Promise<string> {
   } catch { /* skip */ }
 
   try {
-    const res = await fetch('http://localhost:3000/api/sensors/miami-beach-pumps');
+    const res = await fetch(`${origin}/api/sensors/miami-beach-pumps`);
     if (res.ok) {
       const d = await res.json();
       lines.push(`Miami Beach Pumps: ${d.online} online, ${d.offline} offline of ${d.total}`);
@@ -56,7 +56,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { zone, severity } = body;
 
-    const sensorSummary = await fetchSensorSummary();
+    const { origin } = new URL(req.url);
+    const sensorSummary = await fetchSensorSummary(origin);
 
     if (!GEMINI_API_KEY) {
       // Fallback without Gemini
@@ -68,7 +69,7 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = [
       'You are the emergency communications AI for Miami-Dade County FloodWatch system.',
