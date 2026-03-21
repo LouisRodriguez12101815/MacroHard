@@ -22,6 +22,7 @@
 
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getReadingSummary, getRecentPatterns, getDbStats } from '@/lib/db';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const BASE = 'http://localhost:3000';
@@ -109,9 +110,10 @@ function formatEvidenceSummary(evidence: Record<string, any>): string {
 
 const SYSTEM_PROMPT = `You are an AGENTIC citizen assistance AI for Miami-Dade County's FloodWatch platform.
 
-You do TWO things that no other 311 system can do:
+You do THREE things that no other 311 system can do:
 1. Help citizens describe and report issues (flooding, downed trees, accidents, storm drains, etc.)
 2. AUTOMATICALLY VERIFY AND ENRICH their claims using live sensor data
+3. LOOK BACK IN TIME using a historical sensor database to verify past events
 
 When a citizen describes an issue:
 - Ask for the EXACT location (street intersection, landmark, neighborhood) — 1 question max
@@ -124,6 +126,14 @@ When you receive SENSOR_EVIDENCE data, you must:
 - Cite specific sensor readings that are relevant
 - Explain what the data means in plain language
 - Note any additional risks the citizen may not be aware of
+
+When you receive HISTORICAL_EVIDENCE data:
+- This shows sensor min/max/avg over the past 72 hours from our database
+- Use it to verify claims about PAST events ("trees blew down while I was away")
+- If wind_gust max was 45kts 2 days ago, that supports a downed tree claim
+- If rain peaked at 20mm/hr yesterday, that supports a flooding claim
+- Always cite the specific historical peaks and when they occurred
+- If DETECTED_PATTERNS exist, mention them — they show Gemini-identified weather events
 
 Format your evidence analysis like this:
 📊 SENSOR EVIDENCE REPORT
@@ -183,14 +193,36 @@ export async function POST(req: Request) {
 
     // After the first user message (they've described something), inject sensor data
     const hasLocation = messages?.length >= 2; // At least one exchange happened
+
+    // Gather historical evidence from SQLite
+    let historicalSection = '';
+    try {
+      const summary = getReadingSummary(72);
+      const patterns = getRecentPatterns(72);
+      const stats = getDbStats();
+
+      if (summary.length > 0) {
+        const histLines = summary.map(s =>
+          `${s.sensor_id} ${s.metric}: min=${s.min_value?.toFixed(2)}, max=${s.max_value?.toFixed(2)}, avg=${s.avg_value?.toFixed(2)} ${s.unit || ''} (${s.reading_count} readings, ${s.earliest} to ${s.latest})`
+        ).join('\n');
+
+        historicalSection = `\n\nHISTORICAL_EVIDENCE (past 72 hours from database, ${stats.totalReadings} total readings across ${stats.distinctSensors} sensors):\n${histLines}`;
+
+        if (patterns.length > 0) {
+          const patternLines = patterns.map(p => `[${p.severity}] ${p.pattern_type}: ${p.description} (detected ${p.timestamp})`).join('\n');
+          historicalSection += `\n\nDETECTED_PATTERNS (Gemini-identified anomalies):\n${patternLines}`;
+        }
+      }
+    } catch { /* DB not available yet */ }
+
     let enrichedMsg = lastUserMsg;
     if (hasLocation) {
       enrichedMsg = `${lastUserMsg}
 
 SENSOR_EVIDENCE (live data just pulled from ${Object.keys(evidence).length} sensor APIs):
-${evidenceSummary}
+${evidenceSummary}${historicalSection}
 
-Based on the citizen's description and this sensor data, provide your evidence analysis.`;
+Based on the citizen's description, the live sensor data, and any historical evidence, provide your evidence analysis. If the citizen is describing past damage, use the HISTORICAL_EVIDENCE to verify what conditions were like when it happened.`;
     }
 
     const result = await chat.sendMessage(enrichedMsg);
