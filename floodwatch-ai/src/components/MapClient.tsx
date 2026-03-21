@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, InfoWindow } from '@vis.gl/react-google-maps';
 import { Camera, SewerSensorReading, ZoneRisk, FloodIncident, TrafficIncident } from '@/types/schemas';
 import { AlertCircle } from 'lucide-react';
 import { useRealtime } from '@/context/RealtimeContext';
@@ -381,12 +381,13 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
         >
           {/* Sensor Station Markers for active focal point */}
           {activeFocal.sensors.map((station) => (
-            <Marker
+            <AdvancedMarker
               key={station.id}
               position={{ lat: station.lat, lng: station.lng }}
               onClick={() => handleMarkerClick(station.id)}
-              title={station.name}
-            />
+            >
+              <SensorMarkerIcon isDanger={fusionScores.find(f => f.zone === activeFocal.id)?.level === 'CRITICAL'} />
+            </AdvancedMarker>
           ))}
           {activeFocal.sensors.map((station) => activeInfoWindow === station.id && (
             <InfoWindow
@@ -394,22 +395,23 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
               position={{ lat: station.lat, lng: station.lng }}
               onCloseClick={() => setActiveInfoWindow(null)}
             >
-              <div className="p-2 min-w-[200px]">
-                <p className="font-bold text-sm text-slate-900">{station.name}</p>
-                <p className="text-xs text-slate-500 mt-1">{station.description}</p>
-                <p className="text-[10px] font-mono text-slate-400 mt-1">{station.lat.toFixed(4)}, {station.lng.toFixed(4)}</p>
+              <div className="p-2 min-w-[200px] bg-slate-900 border border-slate-800 rounded">
+                <p className="font-bold text-sm text-white">{station.name}</p>
+                <p className="text-xs text-slate-400 mt-1">{station.description}</p>
+                <p className="text-[10px] font-mono text-slate-500 mt-1">{station.lat.toFixed(4)}, {station.lng.toFixed(4)}</p>
               </div>
             </InfoWindow>
           ))}
 
           {/* Camera Markers */}
           {cameras.map((camera) => (
-            <Marker
+            <AdvancedMarker
               key={camera.id}
               position={{ lat: camera.location.lat, lng: camera.location.lng }}
               onClick={() => handleMarkerClick(camera.id)}
-              title={camera.name}
-            />
+            >
+              <CameraMarkerIcon isAlert={camera.aiAnalysisStatus === 'WATER_DETECTED'} />
+            </AdvancedMarker>
           ))}
           {cameras.map((camera) => activeInfoWindow === camera.id && (
             <InfoWindow
@@ -417,25 +419,26 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
               position={{ lat: camera.location.lat, lng: camera.location.lng }}
               onCloseClick={() => setActiveInfoWindow(null)}
             >
-              <div className="space-y-1 p-1 min-w-[180px]">
-                <p className="font-semibold text-sm text-slate-900">{camera.name}</p>
-                <div className="text-xs text-slate-600">AI Status: <span className={camera.aiAnalysisStatus === 'WATER_DETECTED' ? 'text-red-600 font-bold' : ''}>{camera.aiAnalysisStatus}</span></div>
-                <div className="h-1.5 w-full bg-slate-200 rounded-full mt-1">
-                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.max(camera.waterConfidenceScore, 5)}%` }} />
+              <div className="space-y-1 p-1 min-w-[180px] bg-slate-900 border border-slate-800 rounded">
+                <p className="font-semibold text-sm text-white">{camera.name}</p>
+                <div className="text-xs text-slate-400">AI Status: <span className={camera.aiAnalysisStatus === 'WATER_DETECTED' ? 'text-red-400 font-bold' : 'text-slate-300'}>{camera.aiAnalysisStatus}</span></div>
+                <div className="h-1.5 w-full bg-slate-800 rounded-full mt-1">
+                  <div className="h-full bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]" style={{ width: `${Math.max(camera.waterConfidenceScore, 5)}%` }} />
                 </div>
-                <div className="text-[10px] text-right text-slate-500 mt-0.5">Confidence: {camera.waterConfidenceScore}%</div>
+                <div className="text-[10px] text-right text-slate-500 mt-0.5 font-mono">Confidence: {camera.waterConfidenceScore}%</div>
               </div>
             </InfoWindow>
           ))}
 
           {/* Sensor Markers */}
           {sensors.map((sensor) => (
-            <Marker
+            <AdvancedMarker
               key={sensor.sensorId}
               position={{ lat: sensor.location.lat, lng: sensor.location.lng }}
               onClick={() => handleMarkerClick(sensor.sensorId)}
-              title={`Sewer: ${sensor.sensorId}`}
-            />
+            >
+              <SensorMarkerIcon isDanger={sensor.riseRateInchesPerMinute > 0.5} />
+            </AdvancedMarker>
           ))}
           {sensors.map((sensor) => activeInfoWindow === sensor.sensorId && (
             <InfoWindow
@@ -443,23 +446,24 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
               position={{ lat: sensor.location.lat, lng: sensor.location.lng }}
               onCloseClick={() => setActiveInfoWindow(null)}
             >
-              <div className="p-1 min-w-[180px]">
-                <p className="font-semibold text-sm text-slate-900">Sewer: {sensor.sensorId}</p>
-                <p className="text-xs text-slate-600 mt-1">Water Depth: <span className="text-emerald-600">{sensor.waterLevelInches.toFixed(1)} in</span></p>
-                <p className="text-xs text-slate-600">Rise Rate: <span className={sensor.riseRateInchesPerMinute > 0.5 ? 'text-red-600 font-bold' : 'text-slate-500'}>{sensor.riseRateInchesPerMinute.toFixed(1)} in/min</span></p>
-                <p className="text-xs text-slate-600">Flow: {sensor.flowRateGPM} GPM</p>
+              <div className="p-1 min-w-[180px] bg-slate-900 border border-slate-800 rounded">
+                <p className="font-semibold text-sm text-white">Sewer: {sensor.sensorId}</p>
+                <p className="text-xs text-slate-400 mt-1">Water Depth: <span className="text-emerald-400 font-bold">{sensor.waterLevelInches.toFixed(1)} in</span></p>
+                <p className="text-xs text-slate-400">Rise Rate: <span className={sensor.riseRateInchesPerMinute > 0.5 ? 'text-red-400 font-bold' : 'text-slate-500'}>{sensor.riseRateInchesPerMinute.toFixed(1)} in/min</span></p>
+                <p className="text-xs text-slate-500">Flow: {sensor.flowRateGPM} GPM</p>
               </div>
             </InfoWindow>
           ))}
 
           {/* Traffic Markers */}
           {traffic.map((trf) => (
-            <Marker
+            <AdvancedMarker
               key={trf.id}
               position={{ lat: trf.location.lat, lng: trf.location.lng + 0.002 }}
               onClick={() => handleMarkerClick(trf.id)}
-              title="Traffic Anomaly"
-            />
+            >
+              <TrafficMarkerIcon />
+            </AdvancedMarker>
           ))}
           {traffic.map((trf) => activeInfoWindow === trf.id && (
             <InfoWindow
@@ -467,25 +471,26 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
               position={{ lat: trf.location.lat, lng: trf.location.lng + 0.002 }}
               onCloseClick={() => setActiveInfoWindow(null)}
             >
-              <div className="p-1 min-w-[180px]">
-                <p className="font-semibold text-sm text-slate-900">Traffic Anomaly</p>
-                <p className="text-xs text-slate-500 mt-1">{trf.description}</p>
-                <p className="text-xs font-mono mt-1 text-orange-600">{trf.speedMph} MPH / {trf.normalSpeedMph} Normal</p>
+              <div className="p-1 min-w-[180px] bg-slate-900 border border-slate-800 rounded">
+                <p className="font-semibold text-sm text-white">Traffic Anomaly</p>
+                <p className="text-xs text-slate-400 mt-1">{trf.description}</p>
+                <p className="text-xs font-mono mt-1 text-orange-400">{trf.speedMph} MPH / {trf.normalSpeedMph} Normal</p>
               </div>
             </InfoWindow>
           ))}
 
           {/* Incident Markers */}
           {incidents.map((incident) => (
-            <Marker
+            <AdvancedMarker
               key={incident.id}
               position={{ lat: incident.location.lat + 0.002, lng: incident.location.lng }}
               onClick={() => {
                 handleMarkerClick(incident.id);
                 onIncidentSelect?.(incident.id);
               }}
-              title={incident.title}
-            />
+            >
+              <IncidentMarkerIcon />
+            </AdvancedMarker>
           ))}
           {incidents.map((incident) => activeInfoWindow === incident.id && (
             <InfoWindow
@@ -493,14 +498,17 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
               position={{ lat: incident.location.lat + 0.002, lng: incident.location.lng }}
               onCloseClick={() => setActiveInfoWindow(null)}
             >
-              <div className="space-y-2 p-1 max-w-xs min-w-[200px]">
+              <div className="space-y-2 p-1 max-w-xs min-w-[200px] bg-slate-900 border border-slate-800 rounded shadow-2xl">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-500" />
-                  <p className="font-semibold text-red-600">Active Incident</p>
+                  <AlertCircle className="w-4 h-4 text-red-500 animate-pulse" />
+                  <p className="font-semibold text-red-400 shrink-0">Active Incident</p>
                 </div>
-                <p className="text-sm font-medium text-slate-900">{incident.title}</p>
-                <p className="text-xs text-slate-500">{incident.description.substring(0, 100)}...</p>
-                <p className="text-[10px] font-mono bg-slate-100 p-1 rounded border border-slate-200">Status: {incident.status}</p>
+                <p className="text-sm font-medium text-white">{incident.title}</p>
+                <p className="text-xs text-slate-400 leading-snug">{incident.description.substring(0, 100)}...</p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800">
+                  <span className="text-[10px] font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">Status: {incident.status}</span>
+                  <span className="text-[10px] font-mono text-emerald-500 font-bold">{incident.confidenceScore}% Acc.</span>
+                </div>
               </div>
             </InfoWindow>
           ))}
