@@ -51,7 +51,7 @@ export default function ClaimsView() {
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/claims/chat', {
+      const res = await fetch('/api/claims', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
