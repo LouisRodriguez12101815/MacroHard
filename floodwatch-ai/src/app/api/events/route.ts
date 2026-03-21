@@ -4,31 +4,39 @@ import { MockDataService } from '@/services/MockDataService';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  let responseStream = new TransformStream();
-  const writer = responseStream.writable.getWriter();
   const encoder = new TextEncoder();
-
   const service = MockDataService.getInstance();
 
-  const intervalId = setInterval(() => {
-    service.tick();
-    const data = service.getSnapshot();
-    const message = `data: ${JSON.stringify(data)}\n\n`;
-    writer.write(encoder.encode(message)).catch(() => {
-        // Stream closed
-    });
-  }, 2000); // Send updates every 2 seconds
+  const stream = new ReadableStream({
+    async start(controller) {
+      // Send initial heartbeat to keep connection alive in some proxies
+      controller.enqueue(encoder.encode(': connected\n\n'));
 
-  request.signal.addEventListener('abort', () => {
-    clearInterval(intervalId);
-    writer.close();
+      const intervalId = setInterval(() => {
+        try {
+          const data = service.getSnapshot();
+          const message = `data: ${JSON.stringify(data)}\n\n`;
+          controller.enqueue(encoder.encode(message));
+        } catch (err) {
+          console.error('[SSE] Error sending data:', err);
+        }
+      }, 5000); // 5s interval for better stability in dev HMR environments
+
+      request.signal.addEventListener('abort', () => {
+        clearInterval(intervalId);
+        try {
+          controller.close();
+        } catch {}
+      });
+    }
   });
 
-  return new Response(responseStream.readable, {
+  return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       'Connection': 'keep-alive',
+      'Content-Encoding': 'none',
     },
   });
 }

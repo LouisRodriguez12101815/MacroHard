@@ -146,7 +146,7 @@ export async function POST(req: Request) {
 
     if (!GEMINI_API_KEY) {
       return NextResponse.json({
-        reply: "I'm ready to help you report an issue. What are you seeing and where? I'll check our sensor network to verify conditions in your area.",
+        reply: "⚠️ **Gemini AI is not configured.**\n\nPlease add your `GEMINI_API_KEY` to the `.env.local` file to enable live sensor verification and agentic reasoning for citizen claims.",
         model: 'fallback',
       });
     }
