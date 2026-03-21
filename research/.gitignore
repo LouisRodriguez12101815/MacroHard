@@ -1,0 +1,4 @@
+# Generated data exports — run fetch scripts to regenerate
+*.json
+*_report_*.txt
+*_report_*.md

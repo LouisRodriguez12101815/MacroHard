@@ -3,12 +3,12 @@
 import dynamic from 'next/dynamic';
 import { useRealtime } from '@/context/RealtimeContext';
 
-// Dynamically import MapClient since leafleft requires window object
-const MapClient = dynamic(() => import('./MapClient'), { 
+// Google Maps uses client-side rendering; dynamic import keeps bundle splitting
+const MapClient = dynamic(() => import('./MapClient'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full bg-slate-900 animate-pulse flex items-center justify-center rounded-lg border border-slate-800">
-      <span className="text-slate-500">Loading Map...</span>
+      <span className="text-slate-500">Loading Google Maps...</span>
     </div>
   )
 });

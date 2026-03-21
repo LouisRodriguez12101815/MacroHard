@@ -6,6 +6,9 @@
 
 :root {
   color-scheme: dark;
+  --mc-red: #EB001B;
+  --mc-orange: #FF5F00;
+  --mc-yellow: #F79E1B;
 }
 
 body {
@@ -14,22 +17,16 @@ body {
   box-sizing: border-box;
 }
 
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  border-radius: 0.5rem;
-}
-
-.leaflet-popup-content-wrapper, .leaflet-popup-tip {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
-}
-
-.leaflet-popup-content {
-  margin: 0 !important;
-  width: 100% !important;
+/* Sensor feed drop-in animation */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Custom minimal scrollbar */
@@ -41,9 +38,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #FF5F00;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #F79E1B;
 }

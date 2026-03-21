@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from 'react';
-import { Sidebar } from '@/components/Sidebar';
 import { useRealtime } from '@/context/RealtimeContext';
+import { LiveSensorFeed } from '@/components/LiveSensorFeed';
 import { IncidentQueue } from '@/components/IncidentQueue';
 import { IncidentDetailPanel } from '@/components/IncidentDetailPanel';
 import { FloodMap } from '@/components/FloodMap';
@@ -31,20 +31,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 font-sans overflow-hidden">
-      <Sidebar />
       <main className="flex-1 flex flex-col min-w-0">
         
         {/* Value Proposition Header */}
         <header className="px-6 py-5 border-b border-slate-800 bg-slate-900/40 shrink-0 relative overflow-hidden">
            {/* Glow Effect */}
            {state.isDemoMode && (
-             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-transparent animate-pulse" />
+             <div className="absolute inset-0 bg-gradient-to-r from-[#EB001B]/10 via-[#FF5F00]/5 to-transparent animate-pulse" />
            )}
            <div className="relative z-10 flex items-center justify-between">
               <div>
                  <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                    <Shield className="w-6 h-6 text-blue-500" />
+                    <Shield className="w-6 h-6" style={{ color: '#FF5F00' }} />
                     Real-time Multi-Agent Disaster Intelligence
                  </h1>
                  <p className="text-sm text-slate-400 mt-1 max-w-2xl">
@@ -55,7 +53,8 @@ export default function Dashboard() {
               {!state.isDemoMode ? (
                 <button
                   onClick={() => toggleDemoMode(true)}
-                  className="flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all hover:scale-105"
+                  className="flex items-center px-6 py-3 text-white rounded-lg font-bold shadow-[0_0_20px_rgba(255,95,0,0.4)] transition-all hover:scale-105"
+                  style={{ background: 'linear-gradient(135deg, #EB001B, #FF5F00, #F79E1B)' }}
                 >
                   <PlayCircle className="w-5 h-5 mr-2" />
                   Trigger AI Flood Event Demo
@@ -76,8 +75,8 @@ export default function Dashboard() {
              <div className="relative mt-6 pt-4 border-t border-slate-800">
                 <div className="absolute top-8 left-0 w-full h-1 bg-slate-800 rounded-full" />
                 <div 
-                  className="absolute top-8 left-0 h-1 bg-gradient-to-r from-blue-500 to-red-500 rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_10px_rgba(239,68,68,0.5)]"
-                  style={{ width: `${getTimelineProgress()}%` }}
+                  className="absolute top-8 left-0 h-1 rounded-full transition-all duration-1000 ease-in-out shadow-[0_0_10px_rgba(255,95,0,0.5)]"
+                  style={{ background: 'linear-gradient(90deg, #EB001B, #FF5F00, #F79E1B)', width: `${getTimelineProgress()}%` }}
                 />
 
                 <div className="relative flex justify-between z-10">
@@ -89,8 +88,9 @@ export default function Dashboard() {
                        <div key={stage.tick} className="flex flex-col items-center">
                           <div className={cn(
                             "w-4 h-4 rounded-full border-2 mb-2 transition-all duration-500",
-                            isPast ? "bg-red-500 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" : "bg-slate-900 border-slate-700",
-                            isCurrent && "scale-150 animate-pulse bg-blue-500 border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
+                            isPast ? "border-[#FF5F00] shadow-[0_0_10px_rgba(255,95,0,0.8)]" : "bg-slate-900 border-slate-700",
+                            isPast && !isCurrent && "bg-[#EB001B]",
+                            isCurrent && "scale-150 animate-pulse bg-[#FF5F00] border-[#F79E1B] shadow-[0_0_15px_rgba(247,158,27,0.8)]"
                           )} />
                           <span className={cn(
                             "text-[10px] font-bold uppercase tracking-wider transition-colors duration-500",
@@ -106,8 +106,13 @@ export default function Dashboard() {
            )}
         </header>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 relative border-r border-slate-800">
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          {/* Live Sensor Feed Panel */}
+          <div className="w-[280px] bg-slate-900/80 border-r border-slate-800 shrink-0 overflow-hidden">
+            <LiveSensorFeed />
+          </div>
+
+          <div className="flex-1 relative border-r border-slate-800 min-h-0">
              <FloodMap 
                onIncidentSelect={setSelectedIncidentId}
                selectedIncidentId={selectedIncidentId}
@@ -146,6 +151,5 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
-    </div>
   );
 }

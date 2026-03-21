@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useState, useCallback } from 'react';
+import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
 import { Camera, SewerSensorReading, ZoneRisk, FloodIncident, TrafficIncident } from '@/types/schemas';
-import { AlertCircle, Camera as CameraIcon, Activity, AlertTriangle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface MapClientProps {
   cameras: Camera[];
@@ -17,139 +15,337 @@ interface MapClientProps {
   selectedIncidentId?: string | null;
 }
 
-// Custom icons
-function createHtmlIcon(htmlCode: string, colorClass: string, isPulsing: boolean = false) {
-  return L.divIcon({
-    html: `<div class="rounded-full bg-slate-900 border-2 ${colorClass} p-1 text-white flex items-center justify-center shadow-lg ${isPulsing ? 'animate-pulse' : ''}" style="width: 32px; height: 32px;">${htmlCode}</div>`,
-    className: '',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-  });
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
+// ── Three Focal Points ────────────────────────────────────────────────────────
+
+interface FocalPoint {
+  id: string;
+  name: string;
+  subtitle: string;
+  center: { lat: number; lng: number };
+  zoom: number;
+  sensors: Array<{
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    type: string;
+    description: string;
+  }>;
 }
 
-const cameraIcon = createHtmlIcon('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>', 'border-blue-500');
-const cameraWaterIcon = createHtmlIcon('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>', 'border-red-500 bg-red-500/20 text-red-500', true);
-const sensorIcon = createHtmlIcon('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', 'border-emerald-500');
-const sensorDangerIcon = createHtmlIcon('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>', 'border-red-500 text-red-500', true);
-
-const trafficIcon = createHtmlIcon('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>', 'border-orange-500');
-
-const incidentIcon = createHtmlIcon('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>', 'border-red-500 bg-red-500/20 text-red-500', true);
-
-// Pre-defined zone polygons for Miami-Dade just for aesthetic purpose
-const downtownZonePoly: [number, number][] = [
-  [25.77, -80.20], [25.77, -80.18], [25.75, -80.18], [25.75, -80.20]
+const FOCAL_POINTS: FocalPoint[] = [
+  {
+    id: 'stiltsville',
+    name: 'Stiltsville',
+    subtitle: 'Biscayne Bay — Coastal Flood Monitoring',
+    center: { lat: 25.6500, lng: -80.1300 },
+    zoom: 12,
+    sensors: [
+      { id: 'noaa-8723214', name: 'NOAA Virginia Key — Tide & Met', lat: 25.7314, lng: -80.1618, type: 'tide_met', description: 'Real-time water level, wind, air/water temp, pressure' },
+      { id: 'noaa-8723232', name: 'NOAA Key Biscayne — Tides', lat: 25.6652, lng: -80.1628, type: 'tide', description: 'Tide predictions for Key Biscayne' },
+      { id: 'stiltsville-ref', name: 'Stiltsville Historic District', lat: 25.6167, lng: -80.1167, type: 'poi', description: '7 remaining stilt houses — 1 mile south of Cape Florida' },
+      { id: 'cape-florida', name: 'Cape Florida / Bill Baggs State Park', lat: 25.6654, lng: -80.1586, type: 'poi', description: 'Southernmost tip of Key Biscayne — storm surge exposure' },
+      { id: 'mdc-311-storm-surge', name: '311 Storm Surge Zones', lat: 25.6900, lng: -80.1600, type: 'hazard_zone', description: 'Hurricane evacuation zones from Miami-Dade 311 GIS' },
+      { id: 'mdc-311-flood-zone', name: '311 FEMA Flood Zones', lat: 25.6400, lng: -80.1300, type: 'hazard_zone', description: 'FEMA flood zones \u2014 VE coastal high hazard zone' },
+      { id: 'mb-pumps-1', name: 'Miami Beach Stormwater Pumps', lat: 25.7907, lng: -80.1300, type: 'sewer', description: 'Live pump online/offline status \u2014 first line of defense against surface flooding' },
+      { id: 'nexrad-kb', name: 'NEXRAD Rain Radar \u2014 Key Biscayne', lat: 25.6900, lng: -80.1500, type: 'weather', description: 'SFWMD 2km radar rain grid \u2014 real-time precipitation mm/hr' },
+    ],
+  },
+  {
+    id: 'the-lab',
+    name: 'The LAB Miami',
+    subtitle: 'Wynwood — Air Quality & Sewer Infrastructure',
+    center: { lat: 25.8010, lng: -80.1990 },
+    zoom: 15,
+    sensors: [
+      { id: 'the-lab-venue', name: 'The LAB Miami — Hackathon Venue', lat: 25.8010, lng: -80.1990, type: 'poi', description: '400 NW 26th St — Google AI Hackathon HQ' },
+      { id: 'waqi-6298', name: 'WAQI Air Quality — Fire Station #5', lat: 25.78, lng: -80.19, type: 'air_quality', description: 'Live AQI + PM2.5, PM10, O3, NO2, CO — updates every 5 min' },
+      { id: 'wasd-wynwood-1', name: 'WASD Sewer — Wynwood North', lat: 25.8050, lng: -80.1985, type: 'sewer', description: 'Live pump station status: SSO, NAPOT, moratorium flags' },
+      { id: 'wasd-wynwood-2', name: 'WASD Sewer — Midtown', lat: 25.7950, lng: -80.1910, type: 'sewer', description: 'Live pump station status: generator backup, capacity load' },
+      { id: 'nws-wynwood', name: 'NWS Weather Alerts \u2014 Miami-Dade', lat: 25.8020, lng: -80.2050, type: 'weather', description: 'Zone FLZ074 \u2014 active severe weather alerts' },
+      { id: 'wasd-moratorium', name: 'WASD Moratorium Basins \u2014 Wynwood', lat: 25.7980, lng: -80.1960, type: 'sewer', description: 'Basins under pumping moratorium \u2014 high backup flood risk' },
+      { id: 'nexrad-wyn', name: 'NEXRAD Rain Radar \u2014 Wynwood', lat: 25.8000, lng: -80.2020, type: 'weather', description: 'SFWMD 2km radar rain grid \u2014 real-time precipitation mm/hr' },
+    ],
+  },
+  {
+    id: 'olympia',
+    name: 'Olympia Theater',
+    subtitle: 'Flagler St, Downtown — Urban Flood Risk',
+    center: { lat: 25.7748, lng: -80.1903 },
+    zoom: 16,
+    sensors: [
+      { id: 'olympia-theater', name: 'Olympia Theater at Gusman Center', lat: 25.7748, lng: -80.1903, type: 'poi', description: '174 E Flagler St — historic 1926 theater, flood-prone zone' },
+      { id: 'wasd-downtown-1', name: 'WASD Sewer — Brickell/Downtown', lat: 25.7720, lng: -80.1940, type: 'sewer', description: 'Live pump station: SSO overflows, NAPOT load hours' },
+      { id: 'wasd-downtown-2', name: 'WASD Sewer — Flagler District', lat: 25.7760, lng: -80.1880, type: 'sewer', description: 'Live pump station: moratorium flags, generator status' },
+      { id: 'mdc-311-downtown', name: '311 Flood Zone — Downtown', lat: 25.7740, lng: -80.1920, type: 'hazard_zone', description: 'FEMA AE flood zone — urban flood risk area' },
+      { id: 'waqi-downtown', name: 'WAQI Air Quality — Downtown', lat: 25.7750, lng: -80.1870, type: 'air_quality', description: 'Live AQI from nearest monitoring station' },
+      { id: 'nws-downtown', name: 'NWS Weather \u2014 Downtown Miami', lat: 25.7770, lng: -80.1950, type: 'weather', description: 'Zone FLZ074 \u2014 flash flood watches & warnings' },
+      { id: 'nexrad-dt', name: 'NEXRAD Rain Radar \u2014 Downtown', lat: 25.7730, lng: -80.1870, type: 'weather', description: 'SFWMD 2km radar rain grid \u2014 real-time precipitation mm/hr' },
+    ],
+  },
 ];
-const beachZonePoly: [number, number][] = [
-  [25.80, -80.14], [25.80, -80.12], [25.78, -80.12], [25.78, -80.14]
-];
 
-export default function MapClient({ cameras, sensors, zones, incidents, traffic, onIncidentSelect, selectedIncidentId }: MapClientProps) {
-  const MIAMI_DADE_CENTER = { lat: 25.7617, lng: -80.1918 };
+// ── Marker Pin Components ───────────────────────────────────────────────────
 
-  const getZoneColor = (level: string) => {
-    switch (level) {
-      case 'DANGER': return '#ef4444';
-      case 'WARNING': return '#eab308';
-      case 'SAFE': default: return '#3b82f6';
-    }
-  };
+function MarkerPin({ color, pulse, children }: { color: string; pulse?: boolean; children?: React.ReactNode }) {
+  return (
+    <div
+      className={`rounded-full bg-slate-900 border-2 p-1 text-white flex items-center justify-center shadow-lg ${pulse ? 'animate-pulse' : ''}`}
+      style={{ width: 32, height: 32, borderColor: color }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CameraMarkerIcon({ isAlert }: { isAlert: boolean }) {
+  const color = isAlert ? '#ef4444' : '#3b82f6';
+  return (
+    <MarkerPin color={color} pulse={isAlert}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+        <circle cx="12" cy="13" r="3" />
+      </svg>
+    </MarkerPin>
+  );
+}
+
+function SensorMarkerIcon({ isDanger }: { isDanger: boolean }) {
+  const color = isDanger ? '#ef4444' : '#10b981';
+  return (
+    <MarkerPin color={color} pulse={isDanger}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+      </svg>
+    </MarkerPin>
+  );
+}
+
+function TrafficMarkerIcon() {
+  return (
+    <MarkerPin color="#f97316">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      </svg>
+    </MarkerPin>
+  );
+}
+
+function IncidentMarkerIcon() {
+  return (
+    <MarkerPin color="#ef4444" pulse>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    </MarkerPin>
+  );
+}
+
+// ── Main Map Component ──────────────────────────────────────────────────────
+
+export default function MapClient({ cameras, sensors, zones, incidents, traffic, onIncidentSelect }: MapClientProps) {
+  const [activeInfoWindow, setActiveInfoWindow] = useState<string | null>(null);
+  const [activeFocalIdx, setActiveFocalIdx] = useState(0);
+  const activeFocal = FOCAL_POINTS[activeFocalIdx];
+
+  const handleMarkerClick = useCallback((id: string) => {
+    setActiveInfoWindow(prev => (prev === id ? null : id));
+  }, []);
+
+  // If no API key is set, show a placeholder with instructions
+  if (!GOOGLE_MAPS_API_KEY) {
+    return (
+      <div className="w-full h-full rounded-lg overflow-hidden border border-slate-800 bg-slate-900 flex flex-col items-center justify-center text-slate-400 p-8 text-center space-y-4">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-slate-600">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+          <circle cx="12" cy="10" r="3" />
+        </svg>
+        <div>
+          <p className="font-semibold text-slate-300">Google Maps API Key Required</p>
+          <p className="text-sm mt-2">
+            Set <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> in your <code className="bg-slate-800 px-1.5 py-0.5 rounded text-xs">.env.local</code> file.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full rounded-lg overflow-hidden border border-slate-800 relative z-0">
-      <MapContainer
-        center={MIAMI_DADE_CENTER}
-        zoom={13}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
-      >
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        />
+      {/* Focal Point Selector — top-center overlay */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1 bg-slate-900/90 backdrop-blur-sm rounded-lg p-1 border border-slate-700 shadow-xl">
+        {FOCAL_POINTS.map((fp, idx) => (
+          <button
+            key={fp.id}
+            onClick={() => { setActiveFocalIdx(idx); setActiveInfoWindow(null); }}
+            className={`px-3 py-2 rounded-md text-xs font-bold transition-all ${
+              idx === activeFocalIdx
+                ? 'text-white shadow-lg'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+}`}
+            style={idx === activeFocalIdx ? { background: 'linear-gradient(135deg, #EB001B, #FF5F00)' } : undefined}
+          >
+            <div>{fp.name}</div>
+            <div className={`text-[9px] font-normal mt-0.5 ${idx === activeFocalIdx ? 'text-orange-200' : 'text-slate-500'}`}>
+              {fp.sensors.length} sensors
+            </div>
+          </button>
+        ))}
+      </div>
 
-        {/* Zones */}
-        {zones.map(zone => {
-           const poly = zone.id === 'zone-1' ? downtownZonePoly : beachZonePoly;
-           return (
-             <Polygon key={zone.id} positions={poly} pathOptions={{ color: getZoneColor(zone.riskLevel), fillColor: getZoneColor(zone.riskLevel), weight: 2, fillOpacity: 0.1 }}>
-               <Popup>
-                 <div className="p-1 max-w-[200px]">
-                    <h3 className="font-bold border-b border-slate-700 pb-1 mb-1">{zone.name}</h3>
-                    <p className="text-xs text-slate-300 mb-1">Risk Score: {(zone.riskScore * 100).toFixed(0)}/100</p>
-                    <p className="text-[10px] text-slate-400 font-mono italic">{zone.explanation}</p>
-                 </div>
-               </Popup>
-             </Polygon>
-           )
-        })}
+      {/* Focal Point Subtitle — below selector */}
+      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
+        <div className="bg-slate-900/80 backdrop-blur-sm rounded-md px-3 py-1 border border-slate-700">
+          <p className="text-[10px] text-slate-400 text-center">{activeFocal.subtitle}</p>
+        </div>
+      </div>
 
-        {/* Cameras */}
-        {cameras.map((camera) => (
-          <Marker key={camera.id} position={camera.location} icon={camera.aiAnalysisStatus === 'WATER_DETECTED' ? cameraWaterIcon : cameraIcon}>
-            <Popup>
-              <div className="space-y-1 p-1">
-                <p className="font-semibold text-sm">{camera.name}</p>
-                <div className="text-xs text-slate-400">AI Status: {camera.aiAnalysisStatus}</div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full mt-1">
+      <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+        <Map
+          key={activeFocal.id}
+          defaultCenter={activeFocal.center}
+          defaultZoom={activeFocal.zoom}
+          gestureHandling="greedy"
+          disableDefaultUI={false}
+          zoomControl={true}
+          mapTypeControl={false}
+          streetViewControl={false}
+          fullscreenControl={false}
+          colorScheme="DARK"
+          style={{ width: '100%', height: '100%' }}
+        >
+          {/* Sensor Station Markers for active focal point */}
+          {activeFocal.sensors.map((station) => (
+            <Marker
+              key={station.id}
+              position={{ lat: station.lat, lng: station.lng }}
+              onClick={() => handleMarkerClick(station.id)}
+              title={station.name}
+            />
+          ))}
+          {activeFocal.sensors.map((station) => activeInfoWindow === station.id && (
+            <InfoWindow
+              key={`info-${station.id}`}
+              position={{ lat: station.lat, lng: station.lng }}
+              onCloseClick={() => setActiveInfoWindow(null)}
+            >
+              <div className="p-2 min-w-[200px]">
+                <p className="font-bold text-sm text-slate-900">{station.name}</p>
+                <p className="text-xs text-slate-500 mt-1">{station.description}</p>
+                <p className="text-[10px] font-mono text-slate-400 mt-1">{station.lat.toFixed(4)}, {station.lng.toFixed(4)}</p>
+              </div>
+            </InfoWindow>
+          ))}
+
+          {/* Camera Markers */}
+          {cameras.map((camera) => (
+            <Marker
+              key={camera.id}
+              position={{ lat: camera.location.lat, lng: camera.location.lng }}
+              onClick={() => handleMarkerClick(camera.id)}
+              title={camera.name}
+            />
+          ))}
+          {cameras.map((camera) => activeInfoWindow === camera.id && (
+            <InfoWindow
+              key={`info-${camera.id}`}
+              position={{ lat: camera.location.lat, lng: camera.location.lng }}
+              onCloseClick={() => setActiveInfoWindow(null)}
+            >
+              <div className="space-y-1 p-1 min-w-[180px]">
+                <p className="font-semibold text-sm text-slate-900">{camera.name}</p>
+                <div className="text-xs text-slate-600">AI Status: <span className={camera.aiAnalysisStatus === 'WATER_DETECTED' ? 'text-red-600 font-bold' : ''}>{camera.aiAnalysisStatus}</span></div>
+                <div className="h-1.5 w-full bg-slate-200 rounded-full mt-1">
                   <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.max(camera.waterConfidenceScore, 5)}%` }} />
                 </div>
                 <div className="text-[10px] text-right text-slate-500 mt-0.5">Confidence: {camera.waterConfidenceScore}%</div>
               </div>
-            </Popup>
-          </Marker>
-        ))}
+            </InfoWindow>
+          ))}
 
-        {/* Sensors */}
-        {sensors.map((sensor) => (
-          <Marker key={sensor.sensorId} position={sensor.location} icon={sensor.waterLevelInches > 5 ? sensorDangerIcon : sensorIcon}>
-            <Popup>
-              <div className="p-1">
-                 <p className="font-semibold text-sm">Sewer: {sensor.sensorId}</p>
-                 <p className="text-xs text-slate-300 mt-1">Water Depth: <span className="text-emerald-400">{sensor.waterLevelInches.toFixed(1)} in</span></p>
-                 <p className="text-xs text-slate-300">Rise Rate: <span className={sensor.riseRateInchesPerMinute > 0.5 ? 'text-red-400 font-bold' : 'text-slate-400'}>{sensor.riseRateInchesPerMinute.toFixed(1)} in/min</span></p>
-                 <p className="text-xs text-slate-300">Flow: {sensor.flowRateGPM} GPM</p>
+          {/* Sensor Markers */}
+          {sensors.map((sensor) => (
+            <Marker
+              key={sensor.sensorId}
+              position={{ lat: sensor.location.lat, lng: sensor.location.lng }}
+              onClick={() => handleMarkerClick(sensor.sensorId)}
+              title={`Sewer: ${sensor.sensorId}`}
+            />
+          ))}
+          {sensors.map((sensor) => activeInfoWindow === sensor.sensorId && (
+            <InfoWindow
+              key={`info-${sensor.sensorId}`}
+              position={{ lat: sensor.location.lat, lng: sensor.location.lng }}
+              onCloseClick={() => setActiveInfoWindow(null)}
+            >
+              <div className="p-1 min-w-[180px]">
+                <p className="font-semibold text-sm text-slate-900">Sewer: {sensor.sensorId}</p>
+                <p className="text-xs text-slate-600 mt-1">Water Depth: <span className="text-emerald-600">{sensor.waterLevelInches.toFixed(1)} in</span></p>
+                <p className="text-xs text-slate-600">Rise Rate: <span className={sensor.riseRateInchesPerMinute > 0.5 ? 'text-red-600 font-bold' : 'text-slate-500'}>{sensor.riseRateInchesPerMinute.toFixed(1)} in/min</span></p>
+                <p className="text-xs text-slate-600">Flow: {sensor.flowRateGPM} GPM</p>
               </div>
-            </Popup>
-          </Marker>
-        ))}
+            </InfoWindow>
+          ))}
 
-        {/* Traffic */}
-        {traffic.map((trf) => (
-          <Marker key={trf.id} position={{...trf.location, lng: trf.location.lng + 0.002}} icon={trafficIcon}>
-            <Popup>
-              <div className="p-1">
-                <p className="font-semibold text-sm">Traffic Anomaly</p>
-                <p className="text-xs text-slate-400 mt-1">{trf.description}</p>
-                <p className="text-xs font-mono mt-1 text-orange-400">{trf.speedMph} MPH / {trf.normalSpeedMph} Normal</p>
+          {/* Traffic Markers */}
+          {traffic.map((trf) => (
+            <Marker
+              key={trf.id}
+              position={{ lat: trf.location.lat, lng: trf.location.lng + 0.002 }}
+              onClick={() => handleMarkerClick(trf.id)}
+              title="Traffic Anomaly"
+            />
+          ))}
+          {traffic.map((trf) => activeInfoWindow === trf.id && (
+            <InfoWindow
+              key={`info-${trf.id}`}
+              position={{ lat: trf.location.lat, lng: trf.location.lng + 0.002 }}
+              onCloseClick={() => setActiveInfoWindow(null)}
+            >
+              <div className="p-1 min-w-[180px]">
+                <p className="font-semibold text-sm text-slate-900">Traffic Anomaly</p>
+                <p className="text-xs text-slate-500 mt-1">{trf.description}</p>
+                <p className="text-xs font-mono mt-1 text-orange-600">{trf.speedMph} MPH / {trf.normalSpeedMph} Normal</p>
               </div>
-            </Popup>
-          </Marker>
-        ))}
-        
-        {/* Incidents */}
-        {incidents.map((incident) => (
-          <Marker 
-            key={incident.id} 
-            position={{...incident.location, lat: incident.location.lat + 0.002}} 
-            icon={incidentIcon}
-            eventHandlers={{ click: () => onIncidentSelect?.(incident.id) }}
-          >
-            <Popup>
-              <div className="space-y-2 p-1 max-w-xs">
+            </InfoWindow>
+          ))}
+
+          {/* Incident Markers */}
+          {incidents.map((incident) => (
+            <Marker
+              key={incident.id}
+              position={{ lat: incident.location.lat + 0.002, lng: incident.location.lng }}
+              onClick={() => {
+                handleMarkerClick(incident.id);
+                onIncidentSelect?.(incident.id);
+              }}
+              title={incident.title}
+            />
+          ))}
+          {incidents.map((incident) => activeInfoWindow === incident.id && (
+            <InfoWindow
+              key={`info-${incident.id}`}
+              position={{ lat: incident.location.lat + 0.002, lng: incident.location.lng }}
+              onCloseClick={() => setActiveInfoWindow(null)}
+            >
+              <div className="space-y-2 p-1 max-w-xs min-w-[200px]">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-red-500" />
-                  <p className="font-semibold text-red-400">Active Incident</p>
+                  <p className="font-semibold text-red-600">Active Incident</p>
                 </div>
-                <p className="text-sm font-medium">{incident.title}</p>
-                <p className="text-xs text-slate-400">{incident.description.substring(0, 100)}...</p>
-                <p className="text-[10px] font-mono bg-slate-800 p-1 rounded border border-slate-700">Status: {incident.status}</p>
+                <p className="text-sm font-medium text-slate-900">{incident.title}</p>
+                <p className="text-xs text-slate-500">{incident.description.substring(0, 100)}...</p>
+                <p className="text-[10px] font-mono bg-slate-100 p-1 rounded border border-slate-200">Status: {incident.status}</p>
               </div>
-            </Popup>
-          </Marker>
-        ))}
-
-      </MapContainer>
+            </InfoWindow>
+          ))}
+        </Map>
+      </APIProvider>
     </div>
   );
 }
