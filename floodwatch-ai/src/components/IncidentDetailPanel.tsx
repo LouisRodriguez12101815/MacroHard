@@ -26,7 +26,7 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
   const isVerified = incident.status === 'VERIFIED';
 
   return (
-    <div className="w-full h-full bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden shadow-2xl relative">
+    <div className="w-full h-full min-h-0 bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden shadow-2xl relative">
       {/* Background glow if critical */}
       {incident.severity === 'CRITICAL' && (
         <div className="absolute top-0 left-0 w-full h-32 bg-red-500/10 blur-3xl pointer-events-none" />

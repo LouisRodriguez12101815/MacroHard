@@ -195,7 +195,7 @@ export default function Dashboard() {
   }
 
   return (
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 h-full">
         
         {/* Value Proposition Header */}
         <header className={`border-b border-slate-800 bg-slate-900/40 shrink-0 relative overflow-hidden ${mobileView ? 'px-4 py-2' : 'px-6 py-5'}`}>
