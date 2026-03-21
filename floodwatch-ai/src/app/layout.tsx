@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { RealtimeProvider } from "@/context/RealtimeContext";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "FloodWatch AI | Miami-Dade County",
@@ -22,7 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.variable} antialiased h-screen overflow-hidden bg-slate-950 text-slate-50 flex`}
+        className="antialiased h-screen overflow-hidden bg-slate-950 text-slate-50 flex"
+        style={{ fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" }}
       >
         <RealtimeProvider>
           <AppShell>
