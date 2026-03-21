@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRealtime } from '@/context/RealtimeContext';
 import { LiveSensorFeed } from '@/components/LiveSensorFeed';
+import { useMobileView } from '@/components/AppShell';
 import { IncidentQueue } from '@/components/IncidentQueue';
 import { IncidentDetailPanel } from '@/components/IncidentDetailPanel';
 import { FloodMap } from '@/components/FloodMap';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 export default function Dashboard() {
   const { state, toggleDemoMode } = useRealtime();
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const mobileView = useMobileView();
 
   const selectedIncident = state.incidents.find(i => i.id === selectedIncidentId);
 
@@ -34,44 +36,46 @@ export default function Dashboard() {
       <main className="flex-1 flex flex-col min-w-0">
         
         {/* Value Proposition Header */}
-        <header className="px-6 py-5 border-b border-slate-800 bg-slate-900/40 shrink-0 relative overflow-hidden">
+        <header className={`border-b border-slate-800 bg-slate-900/40 shrink-0 relative overflow-hidden ${mobileView ? 'px-4 py-2' : 'px-6 py-5'}`}>
            {/* Glow Effect */}
            {state.isDemoMode && (
              <div className="absolute inset-0 bg-gradient-to-r from-[#EB001B]/10 via-[#FF5F00]/5 to-transparent animate-pulse" />
            )}
            <div className="relative z-10 flex items-center justify-between">
               <div>
-                 <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                    <Shield className="w-6 h-6" style={{ color: '#FF5F00' }} />
-                    Real-time Multi-Agent Disaster Intelligence
+                 <h1 className={`font-extrabold text-white tracking-tight flex items-center gap-2 ${mobileView ? 'text-base' : 'text-2xl'}`}>
+                    <Shield className={mobileView ? 'w-4 h-4' : 'w-6 h-6'} style={{ color: '#FF5F00' }} />
+                    {mobileView ? 'FloodWatch AI' : 'Real-time Multi-Agent Disaster Intelligence'}
                  </h1>
-                 <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                    FloodWatch AI autonomously monitors municipal infrastructure, fuses computer vision with IoT telemetry, and applies agentic reasoning to detect, verify, and resolve crises instantly.
-                 </p>
+                 {!mobileView && (
+                   <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+                      FloodWatch AI autonomously monitors municipal infrastructure, fuses computer vision with IoT telemetry, and applies agentic reasoning to detect, verify, and resolve crises instantly.
+                   </p>
+                 )}
               </div>
 
               {!state.isDemoMode ? (
                 <button
                   onClick={() => toggleDemoMode(true)}
-                  className="flex items-center px-6 py-3 text-white rounded-lg font-bold shadow-[0_0_20px_rgba(255,95,0,0.4)] transition-all hover:scale-105"
+                  className={`flex items-center text-white rounded-lg font-bold shadow-[0_0_20px_rgba(255,95,0,0.4)] transition-all hover:scale-105 ${mobileView ? 'px-3 py-2 text-xs' : 'px-6 py-3'}`}
                   style={{ background: 'linear-gradient(135deg, #EB001B, #FF5F00, #F79E1B)' }}
                 >
-                  <PlayCircle className="w-5 h-5 mr-2" />
-                  Trigger AI Flood Event Demo
+                  <PlayCircle className={mobileView ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'} />
+                  {mobileView ? 'Demo' : 'Trigger AI Flood Event Demo'}
                 </button>
               ) : (
                 <button
                   onClick={() => toggleDemoMode(false)}
-                  className="flex items-center px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold border border-slate-700 transition-all"
+                  className={`flex items-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-bold border border-slate-700 transition-all ${mobileView ? 'px-3 py-2 text-xs' : 'px-6 py-3'}`}
                 >
-                  <StopCircle className="w-5 h-5 mr-2" />
-                  End Demo
+                  <StopCircle className={mobileView ? 'w-4 h-4 mr-1' : 'w-5 h-5 mr-2'} />
+                  {mobileView ? 'Stop' : 'End Demo'}
                 </button>
               )}
            </div>
 
-           {/* Demo Playback Timeline (Only visible in Demo Mode) */}
-           {state.isDemoMode && (
+           {/* Demo Playback Timeline (Only visible in Demo Mode, hidden on mobile) */}
+           {state.isDemoMode && !mobileView && (
              <div className="relative mt-6 pt-4 border-t border-slate-800">
                 <div className="absolute top-8 left-0 w-full h-1 bg-slate-800 rounded-full" />
                 <div 
@@ -107,10 +111,12 @@ export default function Dashboard() {
         </header>
 
         <div className="flex-1 flex overflow-hidden min-h-0">
-          {/* Live Sensor Feed Panel */}
-          <div className="w-[280px] bg-slate-900/80 border-r border-slate-800 shrink-0 overflow-hidden">
-            <LiveSensorFeed />
-          </div>
+          {/* Live Sensor Feed Panel — hidden in mobile */}
+          {!mobileView && (
+            <div className="w-[280px] bg-slate-900/80 border-r border-slate-800 shrink-0 overflow-hidden">
+              <LiveSensorFeed />
+            </div>
+          )}
 
           <div className="flex-1 relative border-r border-slate-800 min-h-0">
              <FloodMap 
@@ -122,7 +128,8 @@ export default function Dashboard() {
              <div className="absolute inset-0 pointer-events-none rounded-lg shadow-[inset_0_0_50px_rgba(15,23,42,0.8)] z-10" />
           </div>
 
-          <div className="w-[380px] flex flex-col bg-slate-900 z-20 shadow-2xl shrink-0">
+          {/* Right panel — hidden in mobile */}
+          <div className={`flex flex-col bg-slate-900 z-20 shadow-2xl shrink-0 ${mobileView ? 'hidden' : 'w-[380px]'}`}>
              {selectedIncident ? (
                <IncidentDetailPanel 
                  incident={selectedIncident} 

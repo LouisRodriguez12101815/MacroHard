@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Bell, Map, FileSearch, PlayCircle, StopCircle, Activity, Car } from 'lucide-react';
+import { Shield, Bell, Map, FileSearch, PlayCircle, StopCircle, Activity, Car, Smartphone, Monitor } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRealtime } from '@/context/RealtimeContext';
 import { useEffect, useState } from 'react';
 import { DiagnosticSnapshot } from '@/adapters/BaseAdapter';
 
-export function Sidebar() {
+export function Sidebar({ mobileView, onToggleMobile }: { mobileView?: boolean; onToggleMobile?: () => void }) {
   const pathname = usePathname();
   const { state, toggleDemoMode } = useRealtime();
   const [diagnostics, setDiagnostics] = useState<DiagnosticSnapshot[]>([]);
@@ -34,6 +34,31 @@ export function Sidebar() {
     { name: 'Diagnostics', href: '/diagnostics', icon: Activity },
     { name: 'Vehicle Safety', href: '/vehicle', icon: Car }
   ];
+
+  // Mobile bottom bar mode
+  if (mobileView) {
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 px-2 py-1 flex items-center justify-around">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link key={item.href} href={item.href} className={cn("flex flex-col items-center py-1 px-2 rounded-md", isActive ? 'text-orange-500' : 'text-slate-500')}>
+              <item.icon className="w-5 h-5" />
+              <span className="text-[9px] mt-0.5">{item.name.split(' ')[0]}</span>
+            </Link>
+          );
+        })}
+        <button onClick={() => toggleDemoMode(!state.isDemoMode)} className={cn("flex flex-col items-center py-1 px-2 rounded-md", state.isDemoMode ? 'text-red-500' : 'text-slate-500')}>
+          {state.isDemoMode ? <StopCircle className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
+          <span className="text-[9px] mt-0.5">{state.isDemoMode ? 'Stop' : 'Demo'}</span>
+        </button>
+        <button onClick={onToggleMobile} className="flex flex-col items-center py-1 px-2 rounded-md text-slate-500">
+          <Monitor className="w-5 h-5" />
+          <span className="text-[9px] mt-0.5">Desktop</span>
+        </button>
+      </nav>
+    );
+  }
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50 overflow-hidden shrink-0">
@@ -89,7 +114,16 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom Controls */}
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-slate-800 space-y-2">
+        {onToggleMobile && (
+          <button
+            onClick={onToggleMobile}
+            className="w-full flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700 transition-all"
+          >
+            <Smartphone className="w-4 h-4 mr-2" />
+            Mobile View
+          </button>
+        )}
         <button
           onClick={() => toggleDemoMode(!state.isDemoMode)}
           className={cn(
