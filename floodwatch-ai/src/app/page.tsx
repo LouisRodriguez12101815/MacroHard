@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRealtime } from '@/context/RealtimeContext';
 import { LiveSensorFeed } from '@/components/LiveSensorFeed';
 import { useMobileView } from '@/components/AppShell';
@@ -31,6 +31,167 @@ export default function Dashboard() {
     if (state.demoTickCount >= 2) return 33;
     return 0;
   };
+
+  // ── Mobile View: YVE Hotel Corner ────────────────────────────────────────
+  const [activeSensorIdx, setActiveSensorIdx] = useState(0);
+  const [mobileTime, setMobileTime] = useState('');
+
+  const nearbyMobileSensors = [
+    { name: 'NOAA Tides', location: 'Virginia Key', icon: '🌊', value: 'Loading...', color: '#3b82f6' },
+    { name: 'NEXRAD Rain', location: 'Downtown Miami', icon: '🌧️', value: 'Loading...', color: '#10b981' },
+    { name: 'WASD Sewer', location: 'Brickell/Downtown', icon: '🚰', value: 'Loading...', color: '#FF5F00' },
+    { name: 'Air Quality', location: 'Fire Station #5', icon: '💨', value: 'Loading...', color: '#F79E1B' },
+    { name: 'MB Pumps', location: 'Miami Beach', icon: '⚡', value: 'Loading...', color: '#8b5cf6' },
+    { name: 'Wind & Pressure', location: 'Virginia Key', icon: '🌀', value: 'Loading...', color: '#06b6d4' },
+  ];
+  const [mobileSensors, setMobileSensors] = useState(nearbyMobileSensors);
+
+  // Rotate sensors every 3 seconds in mobile
+  useEffect(() => {
+    if (!mobileView) return;
+    const timer = setInterval(() => {
+      setActiveSensorIdx(prev => (prev + 1) % mobileSensors.length);
+    }, 3000);
+    setMobileTime(new Date().toLocaleTimeString());
+    const clock = setInterval(() => setMobileTime(new Date().toLocaleTimeString()), 1000);
+    return () => { clearInterval(timer); clearInterval(clock); };
+  }, [mobileView, mobileSensors.length]);
+
+  // Fetch live data for mobile sensors
+  useEffect(() => {
+    if (!mobileView) return;
+    const fetchMobile = async () => {
+      const updated = [...nearbyMobileSensors];
+      try {
+        const tides = await fetch('/api/sensors/noaa-tides').then(r => r.json()).catch(() => null);
+        if (tides?.waterLevel) updated[0].value = `${tides.waterLevel.value} ft MLLW`;
+        if (tides?.wind) updated[5].value = `${tides.wind.speed} kts ${tides.wind.directionCardinal} | ${tides.barometricPressure?.value ?? '—'} mb`;
+      } catch {}
+      try {
+        const rain = await fetch('/api/sensors/nexrad-rain').then(r => r.json()).catch(() => null);
+        const dt = rain?.areas?.find((a: any) => a.area === 'Downtown Miami');
+        if (dt) updated[1].value = `${dt.avgPrecipitationMmHr} mm/hr (${dt.intensity})`;
+      } catch {}
+      try {
+        const sewer = await fetch('/api/sensors/sewer').then(r => r.json()).catch(() => null);
+        if (sewer) {
+          const sso = (sewer.features || []).filter((f: any) => f.attributes?.SSO === 'Y').length;
+          updated[2].value = `${sewer.count} basins | ${sso} SSO overflows`;
+        }
+      } catch {}
+      try {
+        const aqi = await fetch('/api/sensors/air-quality').then(r => r.json()).catch(() => null);
+        if (aqi?.aqi) updated[3].value = `AQI ${aqi.aqi.value} (${aqi.aqi.level})`;
+      } catch {}
+      try {
+        const pumps = await fetch('/api/sensors/miami-beach-pumps').then(r => r.json()).catch(() => null);
+        if (pumps) updated[4].value = `${pumps.online}/${pumps.total} online`;
+      } catch {}
+      setMobileSensors(updated);
+    };
+    fetchMobile();
+    const intv = setInterval(fetchMobile, 30000);
+    return () => clearInterval(intv);
+  }, [mobileView]);
+
+  if (mobileView) {
+    const currentSensor = mobileSensors[activeSensorIdx];
+    return (
+      <div className="flex flex-col h-full bg-slate-950">
+        {/* Compact header */}
+        <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5" style={{ color: '#FF5F00' }} />
+            <span className="text-sm font-bold text-white">FloodWatch AI</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {!state.isDemoMode ? (
+              <button onClick={() => toggleDemoMode(true)} className="px-3 py-1.5 text-[10px] font-bold text-white rounded-md" style={{ background: 'linear-gradient(135deg, #EB001B, #FF5F00)' }}>DEMO</button>
+            ) : (
+              <button onClick={() => toggleDemoMode(false)} className="px-3 py-1.5 text-[10px] font-bold text-red-400 rounded-md bg-red-500/10 border border-red-500/20">STOP</button>
+            )}
+            <span className="text-[10px] font-mono text-slate-500">{mobileTime}</span>
+          </div>
+        </div>
+
+        {/* Location banner */}
+        <div className="px-4 py-2 bg-slate-900/50 border-b border-slate-800">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_4px_#10b981]" />
+            <span className="text-xs text-slate-400">Monitoring:</span>
+            <span className="text-xs font-bold text-white">YVE Hotel Miami</span>
+          </div>
+          <p className="text-[10px] text-slate-600 mt-0.5">146 Biscayne Blvd, Miami, FL 33132 · 25.7748°N, 80.1887°W</p>
+        </div>
+
+        {/* Camera feed placeholder */}
+        <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 relative" style={{ height: 200 }}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-slate-700 text-xs font-mono mb-2">LIVE FEED — CAM-BISCAYNE-01</div>
+            <div className="w-16 h-16 rounded-full border-2 border-slate-700 flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                <circle cx="12" cy="13" r="3" />
+              </svg>
+            </div>
+            <div className="text-[10px] text-slate-600 mt-2">Biscayne Blvd & NE 2nd St</div>
+          </div>
+          {/* Scan line animation */}
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent animate-pulse" />
+          <div className="absolute bottom-2 left-3 text-[9px] font-mono text-emerald-500/60">REC ●</div>
+          <div className="absolute bottom-2 right-3 text-[9px] font-mono text-slate-600">{mobileTime}</div>
+        </div>
+
+        {/* Rotating sensor card */}
+        <div className="mx-4 mt-3 flex-1 flex flex-col min-h-0">
+          {/* Active sensor — big card */}
+          <div className="rounded-xl border p-4 transition-all duration-500" style={{ borderColor: currentSensor.color + '44', background: currentSensor.color + '08' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{currentSensor.icon}</span>
+                <div>
+                  <div className="text-sm font-bold text-white">{currentSensor.name}</div>
+                  <div className="text-[10px] text-slate-500">{currentSensor.location}</div>
+                </div>
+              </div>
+              <div className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: currentSensor.color, background: currentSensor.color + '15' }}>
+                LIVE
+              </div>
+            </div>
+            <div className="text-lg font-mono font-bold" style={{ color: currentSensor.color }}>
+              {currentSensor.value}
+            </div>
+          </div>
+
+          {/* Sensor dots indicator */}
+          <div className="flex justify-center gap-1.5 mt-3">
+            {mobileSensors.map((_, i) => (
+              <div
+                key={i}
+                className={`rounded-full transition-all duration-300 ${i === activeSensorIdx ? 'w-4 h-1.5' : 'w-1.5 h-1.5'}`}
+                style={{ backgroundColor: i === activeSensorIdx ? mobileSensors[i].color : '#334155' }}
+              />
+            ))}
+          </div>
+
+          {/* Mini sensor list */}
+          <div className="mt-3 space-y-1 overflow-y-auto flex-1 pb-2">
+            {mobileSensors.map((s, i) => (
+              <div
+                key={i}
+                onClick={() => setActiveSensorIdx(i)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${i === activeSensorIdx ? 'bg-slate-800 border border-slate-700' : 'opacity-60'}`}
+              >
+                <span className="text-sm">{s.icon}</span>
+                <span className="text-[11px] text-slate-300 flex-1">{s.name}</span>
+                <span className="text-[10px] font-mono" style={{ color: s.color }}>{s.value === 'Loading...' ? '...' : s.value.substring(0, 20)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
       <main className="flex-1 flex flex-col min-w-0">
