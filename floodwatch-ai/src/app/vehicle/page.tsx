@@ -219,7 +219,7 @@ export default function VehiclePage() {
                 <div>
                   <h2 className="text-xl font-bold text-white">{statusColor(advisory.routeStatus).text}</h2>
                   <p className="text-sm text-slate-400">{advisory.origin} → {advisory.destination}</p>
-                  <p className="text-xs text-slate-500 font-mono mt-1">{advisory.hazardCount} hazard{advisory.hazardCount !== 1 ? 's' : ''} detected</p>
+                  <p className="text-xs text-slate-500 font-mono mt-1">{advisory.hazardCount ?? 0} hazard{(advisory.hazardCount ?? 0) !== 1 ? 's' : ''} detected</p>
                 </div>
               </div>
 
@@ -234,10 +234,10 @@ export default function VehiclePage() {
               </div>
 
               {/* Hazard List */}
-              {advisory.hazards.length > 0 && (
+              {(advisory.hazards?.length ?? 0) > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Hazards</p>
-                  {advisory.hazards.map((h, i) => (
+                  {(advisory.hazards || []).map((h, i) => (
                     <div key={i} className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 flex items-center gap-3">
                       <div className={`w-2 h-2 rounded-full shrink-0 ${h.severity === 'HIGH' ? 'bg-red-500 shadow-[0_0_6px_#ef4444]' : 'bg-yellow-500 shadow-[0_0_6px_#eab308]'}`} />
                       <div className="flex-1">
