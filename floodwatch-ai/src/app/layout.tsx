@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 import { RealtimeProvider } from "@/context/RealtimeContext";
 
 const inter = Inter({
@@ -25,10 +25,9 @@ export default function RootLayout({
         className={`${inter.variable} antialiased h-screen overflow-hidden bg-slate-950 text-slate-50 flex`}
       >
         <RealtimeProvider>
-          <Sidebar />
-          <main className="flex-1 h-full overflow-hidden bg-slate-950">
+          <AppShell>
             {children}
-          </main>
+          </AppShell>
         </RealtimeProvider>
       </body>
     </html>

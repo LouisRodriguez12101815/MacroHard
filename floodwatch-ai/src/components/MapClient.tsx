@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
 import { Camera, SewerSensorReading, ZoneRisk, FloodIncident, TrafficIncident } from '@/types/schemas';
 import { AlertCircle } from 'lucide-react';
+import { useRealtime } from '@/context/RealtimeContext';
 
 interface FusionZone {
   zone: string;
@@ -177,13 +178,81 @@ function IncidentMarkerIcon() {
 // ── Main Map Component ──────────────────────────────────────────────────────
 
 export default function MapClient({ cameras, sensors, zones, incidents, traffic, onIncidentSelect }: MapClientProps) {
+  const { state } = useRealtime();
   const [activeInfoWindow, setActiveInfoWindow] = useState<string | null>(null);
   const [activeFocalIdx, setActiveFocalIdx] = useState(0);
   const activeFocal = FOCAL_POINTS[activeFocalIdx];
   const [fusionScores, setFusionScores] = useState<FusionZone[]>([]);
+  const [demoProgress, setDemoProgress] = useState(0); // 0-100 flood progression
+  const [demoZoneIdx, setDemoZoneIdx] = useState(0);
+  const [floodFlash, setFloodFlash] = useState(false);
+  const demoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch fusion scores every 30 seconds
+  // Flash flood demo — escalates over ~50 seconds
   useEffect(() => {
+    if (state.isDemoMode) {
+      // Pick a random zone to flood
+      const randomIdx = Math.floor(Math.random() * FOCAL_POINTS.length);
+      setDemoZoneIdx(randomIdx);
+      setActiveFocalIdx(randomIdx);
+      setDemoProgress(0);
+
+      // Escalate: 0→100 over 50 seconds (every 500ms, +1)
+      let progress = 0;
+      demoTimerRef.current = setInterval(() => {
+        progress += 1;
+        setDemoProgress(Math.min(progress, 100));
+
+        // Flash effect when crossing thresholds
+        if (progress === 25 || progress === 50 || progress === 75 || progress >= 90) {
+          setFloodFlash(true);
+          setTimeout(() => setFloodFlash(false), 300);
+        }
+
+        if (progress >= 100 && demoTimerRef.current) {
+          clearInterval(demoTimerRef.current);
+        }
+      }, 500);
+    } else {
+      setDemoProgress(0);
+      setFloodFlash(false);
+      if (demoTimerRef.current) clearInterval(demoTimerRef.current);
+    }
+    return () => { if (demoTimerRef.current) clearInterval(demoTimerRef.current); };
+  }, [state.isDemoMode]);
+
+  // Generate simulated fusion scores during demo
+  useEffect(() => {
+    if (state.isDemoMode && demoProgress > 0) {
+      const demoZone = FOCAL_POINTS[demoZoneIdx];
+      setFusionScores(FOCAL_POINTS.map((fp, idx) => {
+        const isTarget = idx === demoZoneIdx;
+        const score = isTarget ? demoProgress : Math.min(15 + Math.floor(demoProgress * 0.2), 30);
+        const level = score >= 75 ? 'CRITICAL' : score >= 50 ? 'HIGH' : score >= 25 ? 'MODERATE' : 'LOW';
+        const color = score >= 75 ? '#EB001B' : score >= 50 ? '#FF5F00' : score >= 25 ? '#F79E1B' : '#10b981';
+        return {
+          zone: fp.id, name: fp.name, score, level, color,
+          breakdown: {
+            rain: { value: isTarget ? demoProgress * 0.3 : 0, contribution: isTarget ? Math.round(demoProgress * 0.3) : 0, detail: `${(isTarget ? demoProgress * 0.3 : 0).toFixed(1)} mm/hr` },
+            pumps: { value: isTarget ? demoProgress * 0.4 : 0, contribution: isTarget ? Math.round(demoProgress * 0.2) : 1, detail: isTarget ? `${Math.floor(demoProgress * 0.2)}/52 offline` : '0/52 offline' },
+            tide: { value: isTarget ? 0.5 + demoProgress * 0.03 : 0.5, contribution: isTarget ? Math.round(demoProgress * 0.15) : 2, detail: `${(0.5 + (isTarget ? demoProgress * 0.03 : 0)).toFixed(2)} ft` },
+            wind: { value: isTarget ? demoProgress * 0.5 : 3, contribution: isTarget ? Math.round(demoProgress * 0.1) : 1, detail: `${(isTarget ? demoProgress * 0.5 : 3).toFixed(0)} kts` },
+            sewer: { value: isTarget ? demoProgress * 0.2 : 5, contribution: isTarget ? Math.round(demoProgress * 0.15) : 2, detail: isTarget ? `${Math.floor(demoProgress * 0.15)} SSOs` : '0 SSOs' },
+            pressure: { value: isTarget ? 1015 - demoProgress * 0.15 : 1015, contribution: isTarget ? Math.round(demoProgress * 0.1) : 0, detail: `${(1015 - (isTarget ? demoProgress * 0.15 : 0)).toFixed(1)} mb` },
+          },
+        };
+      }));
+    } else if (!state.isDemoMode) {
+      // Fetch real scores when not in demo
+      fetch('/api/fusion').then(r => r.ok ? r.json() : null).then(d => {
+        if (d?.zones) setFusionScores(d.zones);
+      }).catch(() => {});
+    }
+  }, [demoProgress, state.isDemoMode, demoZoneIdx]);
+
+  // Fetch real fusion scores when not in demo mode
+  useEffect(() => {
+    if (state.isDemoMode) return;
     const fetchFusion = () => {
       fetch('/api/fusion').then(r => r.ok ? r.json() : null).then(d => {
         if (d?.zones) setFusionScores(d.zones);
@@ -192,7 +261,7 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
     fetchFusion();
     const intv = setInterval(fetchFusion, 30000);
     return () => clearInterval(intv);
-  }, []);
+  }, [state.isDemoMode]);
 
   const handleMarkerClick = useCallback((id: string) => {
     setActiveInfoWindow(prev => (prev === id ? null : id));
@@ -217,7 +286,18 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
   }
 
   return (
-    <div className="w-full h-full rounded-lg overflow-hidden border border-slate-800 relative z-0">
+    <div className={`w-full h-full rounded-lg overflow-hidden relative z-0 transition-all duration-500 ${floodFlash ? 'ring-4 ring-red-500/60' : ''}`}
+      style={{ border: state.isDemoMode && demoProgress > 25 ? `2px solid ${demoProgress >= 75 ? '#EB001B' : demoProgress >= 50 ? '#FF5F00' : '#F79E1B'}` : '1px solid rgb(30 41 59)' }}
+    >
+      {/* Flood overlay that grows with demo progress */}
+      {state.isDemoMode && demoProgress > 10 && (
+        <div
+          className="absolute inset-0 z-10 pointer-events-none transition-all duration-1000"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${demoProgress >= 75 ? 'rgba(235,0,27,0.15)' : demoProgress >= 50 ? 'rgba(255,95,0,0.12)' : 'rgba(247,158,27,0.08)'} ${demoProgress}%, transparent ${demoProgress + 20}%)`,
+          }}
+        />
+      )}
       {/* Focal Point Selector with Fusion Scores */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1 bg-slate-900/90 backdrop-blur-sm rounded-lg p-1 border border-slate-700 shadow-xl">
         {FOCAL_POINTS.map((fp, idx) => {
