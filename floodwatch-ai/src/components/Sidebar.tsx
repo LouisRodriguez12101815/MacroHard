@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Shield, Bell, Map, FileSearch, PlayCircle, StopCircle, Activity } from 'lucide-react';
+import { Shield, Bell, Map, FileSearch, PlayCircle, StopCircle, Activity, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRealtime } from '@/context/RealtimeContext';
 import { useEffect, useState } from 'react';
@@ -31,7 +31,8 @@ export function Sidebar() {
     { name: 'Operations Map', href: '/', icon: Map },
     { name: 'Citizen Alerts', href: '/alerts', icon: Bell },
     { name: 'Claims Intel', href: '/claims', icon: FileSearch },
-    { name: 'Diagnostics', href: '/diagnostics', icon: Activity }
+    { name: 'Diagnostics', href: '/diagnostics', icon: Activity },
+    { name: 'Vehicle Safety', href: '/vehicle', icon: Car }
   ];
 
   return (
