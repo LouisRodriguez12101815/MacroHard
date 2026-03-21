@@ -1,0 +1,106 @@
+{
+  "sensors": [
+    {
+      "id": "wasd-sewer",
+      "name": "Miami-Dade WASD Sewer Pump Stations",
+      "type": "sewer",
+      "mode": "LIVE",
+      "endpoint": "https://gisweb.miamidade.gov/arcgis/rest/services/Wasd/WASDSewerPumpStationBasins_2_v1/MapServer/0/query",
+      "pollingMs": 5000,
+      "auth": "none",
+      "enabled": true
+    },
+    {
+      "id": "fdot-cameras",
+      "name": "FDOT SunGuide Traffic Cameras (District 6)",
+      "type": "camera",
+      "mode": "MOCK",
+      "endpoint": "https://sunguide.info",
+      "pollingMs": 10000,
+      "auth": "none",
+      "enabled": true
+    },
+    {
+      "id": "nws-weather",
+      "name": "National Weather Service Alerts — Miami-Dade (FLZ074)",
+      "type": "weather",
+      "mode": "LIVE",
+      "endpoint": "https://api.weather.gov/alerts/active/zone/FLZ074",
+      "pollingMs": 60000,
+      "auth": "none",
+      "enabled": true
+    },
+    {
+      "id": "noaa-tides",
+      "name": "NOAA Tides & Currents — Virginia Key (8723214)",
+      "type": "water_level",
+      "mode": "LIVE",
+      "endpoint": "https://tidesandcurrents.noaa.gov/api/datagetter",
+      "pollingMs": 15000,
+      "auth": "none",
+      "enabled": true
+    },
+    {
+      "id": "sfwmd-realtime",
+      "name": "SFWMD Canal Stages & Flows — South Florida",
+      "type": "water_level",
+      "mode": "MOCK",
+      "endpoint": "https://www.sfwmd.gov/science-data/real-time-data",
+      "pollingMs": 30000,
+      "auth": "none",
+      "enabled": false
+    },
+    {
+      "id": "fdot-traffic",
+      "name": "FDOT SunGuide Traffic Speed/Incidents",
+      "type": "traffic",
+      "mode": "MOCK",
+      "endpoint": "https://api.fdot.gov/traffic/v1/sensors",
+      "pollingMs": 5000,
+      "auth": "api_key",
+      "authEnvVar": "FDOT_API_KEY",
+      "enabled": true
+    },
+    {
+      "id": "waqi-miami",
+      "name": "WAQI Air Quality — Miami Fire Station #5",
+      "type": "air_quality",
+      "mode": "LIVE",
+      "endpoint": "https://api.waqi.info/feed/@6298/",
+      "pollingMs": 300000,
+      "auth": "api_key",
+      "authEnvVar": "WAQI_API_TOKEN",
+      "enabled": true
+    },
+    {
+      "id": "mdc-311-zones",
+      "name": "Miami-Dade 311 CRM \u2014 Storm Surge & Flood Zones",
+      "type": "custom",
+      "mode": "LIVE",
+      "endpoint": "https://giswspro.miamidade.gov/ArcGIS/rest/services/311/311CRM_Display/MapServer",
+      "pollingMs": 3600000,
+      "auth": "none",
+      "enabled": true
+    },
+    {
+      "id": "mb-stormwater-pumps",
+      "name": "Miami Beach Stormwater Pump Stations",
+      "type": "sewer",
+      "mode": "LIVE",
+      "endpoint": "https://gis.miamibeachfl.gov/servicespublic/rest/services/Public/cw_PumpStationN/MapServer/1/query",
+      "pollingMs": 60000,
+      "auth": "none",
+      "enabled": true
+    },
+    {
+      "id": "sfwmd-nexrad-rain",
+      "name": "SFWMD NEXRAD Radar Rain Grid (2km)",
+      "type": "weather",
+      "mode": "LIVE",
+      "endpoint": "https://geoweb.sfwmd.gov/agsext1/rest/services/SFWMD_Rainfall/SFWMD_Rainfall/FeatureServer/4/query",
+      "pollingMs": 300000,
+      "auth": "none",
+      "enabled": true
+    }
+  ]
+}

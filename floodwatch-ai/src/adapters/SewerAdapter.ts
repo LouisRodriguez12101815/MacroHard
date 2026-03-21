@@ -13,8 +13,49 @@ export class SewerAdapter extends BaseAdapter<SewerSensorReading> {
   };
 
   protected async fetchLive(): Promise<any> {
-    // There are rarely public APIs for municipal telemetry.
-    throw new Error('Sewer Telemetry API restricted to AirGapped Internal Network (SCADA-CORE).');
+    // Fetch live data from Miami-Dade WASD GIS via our server-side proxy
+    // (avoids CORS — the proxy route is at /api/sensors/sewer)
+    const baseUrl = typeof window !== 'undefined'
+      ? '' // Client-side: relative URL
+      : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
+
+    const res = await fetch(`${baseUrl}/api/sensors/sewer`);
+    if (!res.ok) throw new Error(`WASD proxy returned ${res.status}`);
+
+    const json = await res.json();
+    const features = json.features || [];
+
+    // Transform ArcGIS features into the format our normalize() expects
+    return features
+      .filter((f: any) => f.attributes && f.geometry)
+      .slice(0, 50) // Limit to 50 nearest for performance
+      .map((f: any) => {
+        const a = f.attributes;
+        const g = f.geometry;
+        // ArcGIS point geometry — rings for polygons, x/y for points
+        const lat = g.y ?? (g.rings?.[0]?.[0]?.[1]) ?? 25.76;
+        const lng = g.x ?? (g.rings?.[0]?.[0]?.[0]) ?? -80.19;
+
+        return {
+          id: `wasd-${a.BASINID || a.PS}`,
+          loc: { lat, lng, zoneId: 'zone-1' },
+          ts: new Date().toISOString(),
+          lvl: a.NAPOT ?? 0,       // Use NAPOT as a proxy for system stress
+          flow: a.PROJNAPOT ?? 0,
+          // Preserve raw WASD fields for enrichment
+          _raw: {
+            ps: a.PS,
+            basinId: a.BASINID,
+            address: a.ADDRESS,
+            district: a.DISTRICT,
+            sso: a.SSO,
+            moratFlag: a.MORATFLAG,
+            napot: a.NAPOT,
+            projNapot: a.PROJNAPOT,
+            generator: a.GNRTRFLAG,
+          },
+        };
+      });
   }
 
   protected fetchMock(): any {

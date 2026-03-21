@@ -38,7 +38,7 @@ export function Sidebar() {
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50 overflow-hidden shrink-0">
       {/* Brand */}
       <div className="h-16 flex items-center px-6 border-b border-slate-800">
-        <Shield className="w-6 h-6 text-blue-500 mr-3 shrink-0" />
+        <Shield className="w-6 h-6 mr-3 shrink-0" style={{ color: '#FF5F00' }} />
         <span className="text-lg font-bold text-white tracking-tight">FloodWatch AI</span>
       </div>
 
@@ -73,13 +73,13 @@ export function Sidebar() {
               className={cn(
                 "flex items-center px-3 py-2.5 rounded-lg transition-colors group",
                 isActive 
-                  ? "bg-blue-600/10 text-blue-400 font-medium" 
+                  ? "bg-orange-600/10 font-medium" 
                   : "text-slate-400 hover:text-white hover:bg-slate-800/50"
               )}
             >
               <item.icon className={cn(
                 "w-5 h-5 mr-3 shrink-0",
-                isActive ? "text-blue-500" : "text-slate-500 group-hover:text-slate-300"
+                isActive ? "text-orange-500" : "text-slate-500 group-hover:text-slate-300"
               )} />
               <span className="text-sm">{item.name}</span>
             </Link>
