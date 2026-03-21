@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FloodIncident, SewerSensorReading } from '@/types/schemas';
+import { ServiceDispatchPanel } from './ServiceDispatchPanel';
 import { X, CheckCircle, AlertTriangle, Camera, Droplets, Zap, ChevronRight, CheckSquare, BrainCircuit, Activity, ShieldCheck, HeartPulse } from 'lucide-react';
 import { LineChart, Line, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -199,37 +200,44 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
           </div>
         )}
 
-      </div>
+        {/* Decision Agent Commands (Now Integrated) */}
+        {activeTab === 'DETAILS' && (
+          <div className="pt-4 border-t border-slate-800">
+            <h3 className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3 flex items-center gap-1.5">
+               <Zap className="w-3.5 h-3.5 text-yellow-500" />
+               Decision Agent Commands
+            </h3>
+            <div className="space-y-2">
+              {incident.recommendedActions.map((rec, idx) => (
+                <div key={idx} className="flex flex-col bg-slate-900 border border-slate-800 rounded-lg overflow-hidden group hover:border-indigo-500/50 transition-all cursor-pointer shadow-md">
+                  <div className="flex items-center justify-between p-3 bg-slate-800/50 group-hover:bg-indigo-600/10 transition-colors">
+                    <span className="flex items-center gap-2 text-xs font-bold text-slate-200 group-hover:text-indigo-400">
+                      {rec.action}
+                    </span>
+                    <ChevronRight className="w-4 h-4 opacity-50 text-slate-400" />
+                  </div>
+                  <div className="px-3 pb-3 pt-1 text-[11px] text-slate-400 italic leading-snug">
+                     {rec.explanation}
+                  </div>
+                </div>
+              ))}
+              {incident.recommendedActions.length === 0 && (
+                <div className="bg-slate-900 rounded-lg border border-slate-800 border-dashed p-4 flex items-center justify-center">
+                   <p className="text-[10px] text-slate-500 text-center uppercase tracking-wider font-bold">Awaiting AI Verification before issuing orders</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-      {/* Suggested Actions footer (Only visible in Details tab if unverified, or always, but let's keep it visible in DETAILS if actions exist) */}
-      {activeTab === 'DETAILS' && (
-      <div className="p-3 border-t border-slate-800 bg-slate-950 z-10 shrink-0">
-        <h3 className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-2 flex items-center gap-1.5 justify-center">
-           <Zap className="w-3.5 h-3.5 text-yellow-500" />
-           Decision Agent Commands
-        </h3>
-        <div className="space-y-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-          {incident.recommendedActions.map((rec, idx) => (
-            <div key={idx} className="flex flex-col bg-slate-900 border border-slate-800 rounded-lg overflow-hidden group hover:border-indigo-500/50 transition-all cursor-pointer shadow-md">
-              <div className="flex items-center justify-between p-3 bg-slate-800/50 group-hover:bg-indigo-600/10 transition-colors">
-                <span className="flex items-center gap-2 text-xs font-bold text-slate-200 group-hover:text-indigo-400">
-                  {rec.action}
-                </span>
-                <ChevronRight className="w-4 h-4 opacity-50 text-slate-400" />
-              </div>
-              <div className="px-3 pb-3 pt-1 text-[11px] text-slate-400 italic leading-snug">
-                 {rec.explanation}
-              </div>
-            </div>
-          ))}
-          {incident.recommendedActions.length === 0 && (
-            <div className="bg-slate-900 rounded-lg border border-slate-800 border-dashed p-4 flex items-center justify-center">
-               <p className="text-[10px] text-slate-500 text-center uppercase tracking-wider font-bold">Awaiting AI Verification before issuing orders</p>
-            </div>
-          )}
-        </div>
+        {/* Multi-Agency Service Dispatch (Now Integrated) */}
+        {activeTab === 'DETAILS' && (
+           <div className="pt-4 border-t border-slate-800">
+              <ServiceDispatchPanel incident={incident} />
+           </div>
+        )}
+
       </div>
-      )}
     </div>
   );
 }
