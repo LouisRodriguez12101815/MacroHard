@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { APIProvider, Map, Marker, InfoWindow } from '@vis.gl/react-google-maps';
 import { Camera, SewerSensorReading, ZoneRisk, FloodIncident, TrafficIncident } from '@/types/schemas';
 import { AlertCircle } from 'lucide-react';
+
+interface FusionZone {
+  zone: string;
+  name: string;
+  score: number;
+  level: string;
+  color: string;
+  breakdown: Record<string, { value: number; contribution: number; detail: string }>;
+}
 
 interface MapClientProps {
   cameras: Camera[];
@@ -171,6 +180,19 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
   const [activeInfoWindow, setActiveInfoWindow] = useState<string | null>(null);
   const [activeFocalIdx, setActiveFocalIdx] = useState(0);
   const activeFocal = FOCAL_POINTS[activeFocalIdx];
+  const [fusionScores, setFusionScores] = useState<FusionZone[]>([]);
+
+  // Fetch fusion scores every 30 seconds
+  useEffect(() => {
+    const fetchFusion = () => {
+      fetch('/api/fusion').then(r => r.ok ? r.json() : null).then(d => {
+        if (d?.zones) setFusionScores(d.zones);
+      }).catch(() => {});
+    };
+    fetchFusion();
+    const intv = setInterval(fetchFusion, 30000);
+    return () => clearInterval(intv);
+  }, []);
 
   const handleMarkerClick = useCallback((id: string) => {
     setActiveInfoWindow(prev => (prev === id ? null : id));
@@ -196,33 +218,72 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
 
   return (
     <div className="w-full h-full rounded-lg overflow-hidden border border-slate-800 relative z-0">
-      {/* Focal Point Selector — top-center overlay */}
+      {/* Focal Point Selector with Fusion Scores */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex gap-1 bg-slate-900/90 backdrop-blur-sm rounded-lg p-1 border border-slate-700 shadow-xl">
-        {FOCAL_POINTS.map((fp, idx) => (
-          <button
-            key={fp.id}
-            onClick={() => { setActiveFocalIdx(idx); setActiveInfoWindow(null); }}
-            className={`px-3 py-2 rounded-md text-xs font-bold transition-all ${
-              idx === activeFocalIdx
-                ? 'text-white shadow-lg'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-}`}
-            style={idx === activeFocalIdx ? { background: 'linear-gradient(135deg, #EB001B, #FF5F00)' } : undefined}
-          >
-            <div>{fp.name}</div>
-            <div className={`text-[9px] font-normal mt-0.5 ${idx === activeFocalIdx ? 'text-orange-200' : 'text-slate-500'}`}>
-              {fp.sensors.length} sensors
-            </div>
-          </button>
-        ))}
+        {FOCAL_POINTS.map((fp, idx) => {
+          const fusion = fusionScores.find(f => f.zone === fp.id);
+          return (
+            <button
+              key={fp.id}
+              onClick={() => { setActiveFocalIdx(idx); setActiveInfoWindow(null); }}
+              className={`px-3 py-2 rounded-md text-xs font-bold transition-all ${
+                idx === activeFocalIdx
+                  ? 'text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+              style={idx === activeFocalIdx ? { background: 'linear-gradient(135deg, #EB001B, #FF5F00)' } : undefined}
+            >
+              <div className="flex items-center gap-2">
+                <span>{fp.name}</span>
+                {fusion && (
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: fusion.color, color: '#fff' }}
+                  >
+                    {fusion.score}
+                  </span>
+                )}
+              </div>
+              <div className={`text-[9px] font-normal mt-0.5 ${idx === activeFocalIdx ? 'text-orange-200' : 'text-slate-500'}`}>
+                {fusion ? `${fusion.level} • ${fp.sensors.length} sensors` : `${fp.sensors.length} sensors`}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Focal Point Subtitle — below selector */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
-        <div className="bg-slate-900/80 backdrop-blur-sm rounded-md px-3 py-1 border border-slate-700">
-          <p className="text-[10px] text-slate-400 text-center">{activeFocal.subtitle}</p>
-        </div>
-      </div>
+      {/* Fusion Score Detail for active zone */}
+      {(() => {
+        const fusion = fusionScores.find(f => f.zone === activeFocal.id);
+        return fusion ? (
+          <div className="absolute top-[70px] left-1/2 -translate-x-1/2 z-20">
+            <div className="bg-slate-900/90 backdrop-blur-sm rounded-lg px-4 py-2 border shadow-xl" style={{ borderColor: fusion.color + '44' }}>
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <div className="text-2xl font-black" style={{ color: fusion.color }}>{fusion.score}</div>
+                  <div className="text-[8px] uppercase tracking-widest text-slate-500">Flood Index</div>
+                </div>
+                <div className="h-8 w-px bg-slate-700" />
+                <div className="flex gap-2">
+                  {Object.entries(fusion.breakdown).map(([key, b]) => (
+                    <div key={key} className="text-center">
+                      <div className="text-[10px] font-bold" style={{ color: b.contribution > 5 ? fusion.color : '#64748b' }}>{b.contribution}</div>
+                      <div className="text-[8px] text-slate-500">{key}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[9px] text-slate-500 text-center mt-1">{activeFocal.subtitle}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
+            <div className="bg-slate-900/80 backdrop-blur-sm rounded-md px-3 py-1 border border-slate-700">
+              <p className="text-[10px] text-slate-400 text-center">{activeFocal.subtitle}</p>
+            </div>
+          </div>
+        );
+      })()}
 
       <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
         <Map
