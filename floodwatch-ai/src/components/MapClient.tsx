@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { APIProvider, Map, AdvancedMarker, InfoWindow } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, InfoWindow, RenderingType } from '@vis.gl/react-google-maps';
 import { Camera, SewerSensorReading, ZoneRisk, FloodIncident, TrafficIncident } from '@/types/schemas';
 import { AlertCircle } from 'lucide-react';
 import { useRealtime } from '@/context/RealtimeContext';
@@ -369,6 +369,7 @@ export default function MapClient({ cameras, sensors, zones, incidents, traffic,
         <Map
           key={activeFocal.id}
           mapId="8e0a97af9386fef" // Required for AdvancedMarker
+          renderingType={RenderingType.RASTER} // Fixes "Vector fallback" console warning
           defaultCenter={activeFocal.center}
           defaultZoom={activeFocal.zoom}
           gestureHandling="greedy"
