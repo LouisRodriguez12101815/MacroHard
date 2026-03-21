@@ -77,6 +77,126 @@ const SENSORS: SensorMeta[] = [
     localRoute: '/api/sensors/311-zones',
     seasonalKey: '311-zones',
   },
+  {
+    id: 'ndbc-coastal',
+    name: 'NDBC Coastal C-MAN Stations',
+    owner: 'NOAA / National Data Buoy Center',
+    ownerType: 'government',
+    measures: 'Offshore wind, pressure, waves, SST at Fowey Rocks, Molasses Reef, Long Key',
+    apiEndpoint: 'https://www.ndbc.noaa.gov/data/realtime2/ (FWYF1, MLRF1, LONF1)',
+    localRoute: '/api/sensors/ndbc-coastal',
+    seasonalKey: 'noaa-wind',
+  },
+  {
+    id: 'ports-currents',
+    name: 'NOAA PORTS Miami Current Meters',
+    owner: 'NOAA / CO-OPS PORTS Program',
+    ownerType: 'government',
+    measures: 'Harbor/inlet current speed and direction (6-min intervals) at Government Cut',
+    apiEndpoint: 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter (mi0101, mi0201, mi0301)',
+    localRoute: '/api/sensors/ports-currents',
+    seasonalKey: 'noaa-tides',
+  },
+  {
+    id: 'metar',
+    name: 'Aviation METAR Weather Stations',
+    owner: 'FAA / NWS / AviationWeather.gov',
+    ownerType: 'government',
+    measures: 'Wind, gusts, visibility, ceiling, temp, dewpoint, pressure (KMIA, KOPF, KHWO)',
+    apiEndpoint: 'https://aviationweather.gov/api/data/metar?ids=KMIA&format=json',
+    localRoute: '/api/sensors/metar',
+    seasonalKey: 'noaa-wind',
+  },
+  {
+    id: 'mb-tides',
+    name: 'NOAA Miami Beach Tide Station',
+    owner: 'NOAA / CO-OPS',
+    ownerType: 'government',
+    measures: 'Water level and wind at Miami Beach (Station 8723170)',
+    apiEndpoint: 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter (8723170)',
+    localRoute: '/api/sensors/miami-beach-tides',
+    seasonalKey: 'noaa-tides',
+  },
+  {
+    id: 'nws-alerts',
+    name: 'NWS Active Weather Alerts',
+    owner: 'NOAA / National Weather Service',
+    ownerType: 'government',
+    measures: 'Flash flood watches/warnings, severe thunderstorm alerts, tornado warnings',
+    apiEndpoint: 'https://api.weather.gov/alerts/active?area=FL',
+    localRoute: '/api/sensors/noaa-tides',
+    seasonalKey: 'nexrad-rain',
+  },
+  {
+    id: 'sfwmd-dbhydro',
+    name: 'SFWMD DBHYDRO Hydrology Database',
+    owner: 'South Florida Water Mgmt District',
+    ownerType: 'government',
+    measures: 'Canal stages, structure flows, rainfall, groundwater across 16-county area',
+    apiEndpoint: 'https://my.sfwmd.gov/dbhydroplsql/ (DBHYDRO web services)',
+    localRoute: '/api/sensors/nexrad-rain',
+    seasonalKey: 'nexrad-rain',
+  },
+  {
+    id: 'kamx-nexrad',
+    name: 'NEXRAD KAMX Doppler Radar — Miami',
+    owner: 'NOAA / NWS / NCEI',
+    ownerType: 'government',
+    measures: 'Reflectivity, velocity, rainfall estimation — severe storm detection',
+    apiEndpoint: 'https://www.ncei.noaa.gov/access/homr/ (KAMX: 25.611, -80.413)',
+    localRoute: '/api/sensors/nexrad-rain',
+    seasonalKey: 'nexrad-rain',
+  },
+  {
+    id: 'usgs-storm-tide',
+    name: 'USGS Storm Tide Sensor Network',
+    owner: 'U.S. Geological Survey',
+    ownerType: 'government',
+    measures: 'Rapid-deployment pressure sensors for storm surge peak levels during events',
+    apiEndpoint: 'https://stn.wim.usgs.gov/STNPublicInfo/ (event-driven deployments)',
+    localRoute: '/api/sensors/noaa-tides',
+    seasonalKey: 'noaa-tides',
+  },
+  {
+    id: 'goes-glm',
+    name: 'GOES GLM Satellite Lightning',
+    owner: 'NOAA / NESDIS',
+    ownerType: 'government',
+    measures: 'Continuous geostationary lightning mapping — convective storm detection offshore',
+    apiEndpoint: 'https://registry.opendata.aws/noaa-goes/ (GOES-R Series)',
+    localRoute: '/api/sensors/nexrad-rain',
+    seasonalKey: 'nexrad-rain',
+  },
+  {
+    id: 'gpm-imerg',
+    name: 'NASA GPM IMERG Precipitation',
+    owner: 'NASA / Goddard Space Flight Center',
+    ownerType: 'government',
+    measures: 'Global satellite precipitation estimates updated every 30 min',
+    apiEndpoint: 'https://gpm.nasa.gov/data/imerg',
+    localRoute: '/api/sensors/nexrad-rain',
+    seasonalKey: 'nexrad-rain',
+  },
+  {
+    id: 'hf-radar',
+    name: 'HF Radar Surface Currents — FL Keys',
+    owner: 'SECOORA / USF / IOOS',
+    ownerType: 'government',
+    measures: 'Hourly surface current maps via CODAR SeaSonde (Marathon, Key West, Dry Tortugas)',
+    apiEndpoint: 'https://hfradar.ioos.us/erddap/',
+    localRoute: '/api/sensors/ports-currents',
+    seasonalKey: 'noaa-tides',
+  },
+  {
+    id: 'mdc-scada',
+    name: 'Miami-Dade SCADA Rainfall & Canals',
+    owner: 'Miami-Dade County',
+    ownerType: 'government',
+    measures: 'Real-time rainfall totals and secondary canal levels (shared with NWS)',
+    apiEndpoint: 'Endpoints unspecified — internal SCADA network',
+    localRoute: '/api/sensors/sewer',
+    seasonalKey: 'nexrad-rain',
+  },
 ];
 
 // ── Component ───────────────────────────────────────────────────────────────
@@ -143,8 +263,16 @@ export default function DiagnosticsPage() {
         return d.count ? `${d.count} basins fetched` : 'No data';
       case '311-zones':
         return d.stormSurge ? `Storm surge: ${d.stormSurge.count} zones | Flood: ${d.floodZone?.count ?? 0} zones` : 'No data';
+      case 'ndbc-coastal':
+        return d.stations ? d.stations.map((s: any) => `${s.stationId}: ${s.windSpeed ?? '—'} m/s`).join(' | ') : 'No data';
+      case 'ports-currents':
+        return d.stations ? d.stations.map((s: any) => `${s.name}: ${s.speed ?? '—'} kts`).join(' | ') : 'No data';
+      case 'metar':
+        return d.stations ? d.stations.filter((s: any) => s.status === 'online').map((s: any) => `${s.stationId}: ${s.windSpeed ?? '—'}kt ${s.temp ?? '—'}°C`).join(' | ') : 'No data';
+      case 'mb-tides':
+        return d.waterLevel ? `${d.waterLevel.value} ft MLLW` : 'No data';
       default:
-        return 'No data';
+        return d ? 'Connected' : 'No data';
     }
   };
 
