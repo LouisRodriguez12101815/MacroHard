@@ -25,7 +25,7 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
   const isVerified = incident.status === 'VERIFIED';
 
   return (
-    <div className="w-[450px] bg-slate-900 border-l border-slate-800 flex flex-col shrink-0 h-full overflow-hidden shadow-2xl relative">
+    <div className="w-full h-full bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden shadow-2xl relative">
       {/* Background glow if critical */}
       {incident.severity === 'CRITICAL' && (
         <div className="absolute top-0 left-0 w-full h-32 bg-red-500/10 blur-3xl pointer-events-none" />
@@ -45,7 +45,7 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
             <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </button>
         </div>
-        <h2 className="text-xl font-bold text-white leading-tight">{incident.title}</h2>
+        <h2 className="text-lg font-bold text-white leading-tight">{incident.title}</h2>
         
         <div className={cn("text-xs flex items-center gap-2 p-2 rounded border", isVerified ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-blue-500/10 border-blue-500/30 text-blue-400")}>
           {isVerified ? (
@@ -77,7 +77,7 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 relative z-10">
+      <div className="flex-1 overflow-y-auto p-3 space-y-4 relative z-10 custom-scrollbar">
         
         {/* EXECUTIVE SUMMARY CARD (Only appears when Verified) */}
         {activeTab === 'DETAILS' && isVerified && incident.recommendedActions.length > 0 && (
@@ -142,7 +142,7 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
 
             <div className="space-y-3">
               <h3 className="text-xs font-semibold tracking-wider text-slate-500 uppercase">Sewer Backflow Telemetry</h3>
-              <div className="h-[140px] bg-slate-950 rounded-xl border border-slate-800 p-3">
+              <div className="h-[120px] bg-slate-950 rounded-xl border border-slate-800 p-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
                     <Line type="monotone" dataKey="level" stroke="#10b981" strokeWidth={3} dot={false} isAnimationActive={false} />
@@ -203,12 +203,12 @@ export function IncidentDetailPanel({ incident, sensors = [], onClose }: Inciden
 
       {/* Suggested Actions footer (Only visible in Details tab if unverified, or always, but let's keep it visible in DETAILS if actions exist) */}
       {activeTab === 'DETAILS' && (
-      <div className="p-4 border-t border-slate-800 bg-slate-950 z-10 shrink-0">
-        <h3 className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-3 flex items-center gap-1.5 justify-center">
+      <div className="p-3 border-t border-slate-800 bg-slate-950 z-10 shrink-0">
+        <h3 className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-2 flex items-center gap-1.5 justify-center">
            <Zap className="w-3.5 h-3.5 text-yellow-500" />
            Decision Agent Commands
         </h3>
-        <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+        <div className="space-y-2 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
           {incident.recommendedActions.map((rec, idx) => (
             <div key={idx} className="flex flex-col bg-slate-900 border border-slate-800 rounded-lg overflow-hidden group hover:border-indigo-500/50 transition-all cursor-pointer shadow-md">
               <div className="flex items-center justify-between p-3 bg-slate-800/50 group-hover:bg-indigo-600/10 transition-colors">

@@ -23,10 +23,10 @@ interface ServiceDispatchPanelProps {
 export function ServiceDispatchPanel({ incident }: ServiceDispatchPanelProps) {
   if (!incident.dispatches || incident.dispatches.length === 0) {
     return (
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center space-y-2 h-[200px]">
-        <Activity className="w-8 h-8 text-slate-700 animate-pulse" />
-        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
-          Awaiting AI Verification to Trigger Dispatches
+      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-center text-center space-y-2 h-[120px]">
+        <Activity className="w-6 h-6 text-slate-700 animate-pulse" />
+        <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+          Awaiting Verification
         </p>
       </div>
     );
@@ -44,7 +44,7 @@ export function ServiceDispatchPanel({ incident }: ServiceDispatchPanelProps) {
         </span>
       </div>
 
-      <div className="p-3 grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+      <div className="p-2 grid grid-cols-1 gap-1.5 max-h-[250px] overflow-y-auto custom-scrollbar">
         {incident.dispatches.map((dispatch) => (
           <ServiceCard key={dispatch.id} dispatch={dispatch} />
         ))}
@@ -69,7 +69,7 @@ function ServiceCard({ dispatch }: { dispatch: ServiceDispatch }) {
             <config.icon className={cn("w-4 h-4", config.iconColor)} />
           </div>
           <div>
-            <div className="text-[11px] font-black text-slate-200 uppercase tracking-tight">
+            <div className="text-[10px] font-black text-slate-200 uppercase tracking-tight">
               {config.label}
             </div>
             <div className="text-[10px] text-slate-500 font-medium">

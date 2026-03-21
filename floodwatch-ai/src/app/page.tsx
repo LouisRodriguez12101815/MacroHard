@@ -291,17 +291,17 @@ export default function Dashboard() {
           </div>
 
           {/* Right panel — hidden in mobile */}
-          <div className={`flex flex-col bg-slate-900 z-20 shadow-2xl shrink-0 ${mobileView ? 'hidden' : 'w-[380px]'}`}>
+          <div className={`flex flex-col bg-slate-900 z-20 shadow-2xl shrink-0 h-full overflow-hidden ${mobileView ? 'hidden' : 'w-[420px]'}`}>
              {selectedIncident ? (
-               <div className="flex-1 flex flex-col min-h-0 bg-slate-950">
-                 <div className="flex-1 overflow-hidden">
+               <div className="flex-1 flex flex-col min-h-0 bg-slate-950 overflow-hidden">
+                 <div className="flex-1 min-h-0 overflow-hidden">
                     <IncidentDetailPanel 
                       incident={selectedIncident} 
                       sensors={state.sensors}
                       onClose={() => setSelectedIncidentId(null)}
                     />
                  </div>
-                 <div className="p-3 border-t border-slate-800 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+                 <div className="shrink-0 p-3 border-t border-slate-800 bg-slate-900 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
                     <ServiceDispatchPanel incident={selectedIncident} />
                  </div>
                </div>
