@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     // Gemini advisory
     if (GEMINI_API_KEY) {
       const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
       const prompt = [
         'You are a vehicle navigation safety AI for the FloodWatch system in Miami-Dade County.',

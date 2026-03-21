@@ -156,7 +156,7 @@ export async function POST(req: Request) {
     const evidenceSummary = formatEvidenceSummary(evidence);
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
     const chatHistory = [
       { role: 'user' as const, parts: [{ text: 'System context: ' + SYSTEM_PROMPT }] },
