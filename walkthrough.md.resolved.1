@@ -1,0 +1,51 @@
+# FloodWatch AI V2 - Verification and Walkthrough
+
+## Summary of Accomplishments
+
+I have successfully upgraded the **FloodWatch AI MVP** to **V2**, transforming the basic mock application into a dynamic, deterministic state engine reflecting real-world AI reasoning and data validation.
+
+Here are the key areas added in this upgrade:
+
+### 1. Robust Domain Models
+The [schemas.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts) was significantly restructured to cleanly separate types. The models now support comprehensive real-world scenarios, differentiating [TrafficIncident](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#21-29), [WeatherAlert](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#30-36), and [SewerSensorReading](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#43-51). More importantly, `explanation` fields were added across the board to ensure **explainable AI** workflows.
+
+### 2. Deterministic Risk Scoring Engine
+The [MockDataService](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#12-265) now dynamically calculates risk scores ([calculateZoneRisk()](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#83-128)) based on objective variables:
+- Weather intensity (e.g., flash flood warnings and rainfall in inches per hour)
+- Sewer sensor rise rates and total depth (detecting backflow)
+- Sharp slowdown anomalies on traffic corridors
+- Vision service confirming standing water
+
+These calculations output a normalized risk score (0 to 1) applied to zones on the map, and an explicit text explanation detailing exactly *why* the score was generated.
+
+### 3. Verification Rules
+To prevent false-positive alarms, the simulation enforces **Source Consensus Logic**:
+- An incident starts securely as `UNVERIFIED`.
+- The AI algorithm ensures an incident upgrades to `VERIFIED` **only** if there are at least 2 independent High-confidence sources, or 1 High and 1 Medium source. 
+- In our scenario, the incident requires both the high-rising sewer telemetry AND the webcam's visual verification before turning red and jumping to a 95+ confidence score.
+
+### 4. Demo Mode Staged Scenario
+Instead of everything happening at once, toggling "Demo Mode" launches a synchronized chronological event:
+1. **Stage 1 (T=2s):** Weather turns to Heavy Rain.
+2. **Stage 2 (T=4s):** Sensors report rising water, traffic sharply drops. An `UNVERIFIED` incident is registered on the dashboard.
+3. **Stage 3 (T=7s):** AI Webcam detects water, immediately promoting the incident to `VERIFIED`, boosting its severity to `CRITICAL`, and automatically generating draft Citizen Alerts.
+
+### 5. Explicit REST API Routing
+We created a fully decoupled frontend and backend by constructing distinct Next.js edge endpoints (`/api/zones`, `/api/incidents`, `/api/incidents/[id]`, `/api/claims`, `/api/alerts`, `/api/operations`, `/api/demo`). The UI now hydrates via `/api/operations` immediately prior to engaging the overarching SSE.
+
+### 6. UI Polish & Explainability
+The dashboard panels directly ingest the new data to be explicit:
+- Map polygons turn yellow/red based on deterministic scoring, with tooltips presenting the explanation logic.
+- The **Incident Detail Panel** parses out exact validation source confidence levels.
+- AI Recommended Actions now present the exact rationale beneath the action (e.g., "AI requires visual confirmation to upgrade to VERIFIED status.")
+
+## Validation Results
+
+- **Build / Types**: Re-ran the TypeScript compiler (`tsc --noEmit`); confirmed that the strict types spanning [TrafficIncident](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#21-29), arrays of [RecommendedAction](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#61-65) objects, and UI dependencies compiled successfully (0 errors).
+- **Functionality**: The staged simulation triggers correctly via `POST /api/demo`, and state propogation across REST & SSE is flawless.
+
+## Next Steps for the User
+
+1. Navigate to the project directory: `cd /Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai`
+2. Start the development server: `npm run dev`
+3. Hit the **Demo Mode** toggle, deliberately click on the `UNVERIFIED` Brickell Underpass incident when it appears, and observe the UI dynamically update its confidence and AI logic on the fly!

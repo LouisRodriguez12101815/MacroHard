@@ -1,0 +1,33 @@
+# FloodWatch AI Task Plan
+
+- [x] Project Setup
+  - [x] Initialize Next.js project with TypeScript and Tailwind CSS
+  - [x] Set up Leaflet for map UI
+  - [x] Set up Recharts for charts
+  - [x] Define folder structure and architectural boundaries
+- [x] Domain Models & Interfaces
+  - [x] Define [Incident](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#35-52), [ZoneRisk](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#27-34), [Camera](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#11-19), [SensorReading](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#20-26), [Alert](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#53-61), [ClaimEvidence](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#62-70)
+- [x] Backend Services (Next.js API Routes & Services)
+  - [x] Webcam service (mock)
+  - [x] Weather service (mock/live)
+  - [x] Traffic service (mock)
+  - [x] Flood/water service (mock)
+  - [x] Sewer sensor service (mock)
+  - [x] Risk scoring service
+  - [x] Verification service
+  - [x] Decision service
+  - [x] Alert publishing service
+  - [x] Real-time event pipeline (SSE endpoint)
+- [x] Frontend Core Components
+  - [x] Layout and Navigation (dark mode dashboard aesthetic)
+  - [x] Real-time context provider (SSE listener)
+- [x] Operations Dashboard
+  - [x] Flood Risk Map (Leaflet) with zones, cameras, sensors, and incidents
+  - [x] Active Incidents List/Queue
+  - [x] Incident Detail Panel (snapshots, trends, weather, confidence score, suggested actions)
+- [/] Additional Views
+  - [/] Citizen Alert View
+  - [/] Claims-validation Evidence Timeline
+- [ ] Final Polish
+  - [ ] "Demo mode" toggle to simulate flooding
+  - [ ] README setup instructions

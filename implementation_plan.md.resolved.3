@@ -1,0 +1,34 @@
+# FloodWatch AI V4 Implementation Plan
+
+## Goal Description
+Transform the hardcoded [MockDataService](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#14-224) state into a production-style data ingestion layer. By introducing explicit `Adapters` for Traffic, Weather, Webcams, Water Levels, and Sewer Sensors, the app will support configurable `LIVE`, `MOCK`, and `DEMO` modes with robust error handling, parsing separation, and diagnostic transparency.
+
+## Proposed Changes
+
+### **1. Adapter Configurations and Base Interface**
+- **[NEW]** `src/config/sources.ts`: A centralized configuration file defining `DataSourceMode` (`LIVE`, `MOCK`, `DEMO`) per adapter.
+- **[NEW]** `src/adapters/BaseAdapter.ts`: An abstract class or interface enforcing `fetchData()`, standardized error handling, exponential backoff retries, and recording the last fetch time / payload for the diagnostics UI.
+
+### **2. Explicit Adapters**
+Documented targeted real-world Florida sources within each explicit adapter:
+- **[NEW]** `TrafficAdapter.ts`: Targets **FDOT SunGuide API** or **HERE Traffic**. Parses raw congestion vectors into [TrafficIncident](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#21-29) models. 
+- **[NEW]** `WebcamAdapter.ts`: Targets **Miami-Dade County Traffic Cameras public feed**. Normalizes URLs and bounds into [Camera](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#11-20) objects.
+- **[NEW]** `WeatherAdapter.ts`: Targets **National Weather Service (NWS) API** (alerts for Miami-Dade). Maps raw NWS GeoJSON to [WeatherAlert](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#30-36).
+- **[NEW]** `WaterLevelAdapter.ts`: Targets **USGS Water Data / NOAA Tides array** for Biscayne Bay. Maps to our physical locations.
+- **[NEW]** `SewerAdapter.ts`: Municipal sewer telemetry is rarely public. This will strictly use sophisticated, time-based Gaussian fluctuations for `MOCK`, overriding to hardcoded spikes for `DEMO`, and returning `Not Implemented` for `LIVE`.
+
+### **3. Data Orchestrator Replacement**
+- **[MODIFY]** [src/services/MockDataService.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts) -> rename concept internally to `DataOrchestrator` (or just refactor the class contents). The engine will now iterate over the mapped Adapters, calling `.fetchData()` and piping the results down into the Sensor Fusion and Verification Agents. 
+
+### **4. UI Updates**
+- **[MODIFY]** [Sidebar.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/Sidebar.tsx) / [page.tsx](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/app/page.tsx): Add a compact Health Status Indicator component showing green/yellow/red dots for the 5 pipelines seamlessly.
+- **[NEW]** `src/app/diagnostics/page.tsx`: A developer-focused Operations Dashboard route. It loops over the central config and displays a table/grid for each Adapter:
+  - Current Mode
+  - Connection Status (Alive, Failing, Offline)
+  - Last Fetch Timestamp
+  - JSON Viewer for the last successfully parsed raw payload
+
+## Verification
+- Switch all adapters to `MOCK`. Check that the random fluctuations still cleanly execute through the UI.
+- Trigger `DEMO` mode and ensure the rigid scenario simulation still operates exactly as intended via the new BaseAdapter overrides.
+- Navigate to `/diagnostics` to visually inspect that every pipeline is tracking its metrics cleanly.

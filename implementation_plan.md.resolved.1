@@ -1,0 +1,28 @@
+# FloodWatch AI V2 Implementation Plan
+
+## Goal Description
+Upgrade the FloodWatch AI MVP from a static data mock to a fully functional deterministic evaluation engine, simulating the real lifecycle of municipal flood response.
+
+## Proposed Changes
+
+### **1. Enhanced Domain Models**
+Modify [src/types/schemas.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts) to explicitly separate sensor and alert types (`WeatherAlert`, `TrafficIncident`, `WaterLevelReading`, `SewerSensorReading`) and introduce explainability fields (`explanation`) on [ZoneRisk](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/types/schemas.ts#27-34) and `RecommendedAction`.
+
+### **2. MockDataService Engine**
+Turn [src/services/MockDataService.ts](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts) into a phased event simulator:
+- **Seed Data:** Add comprehensive Miami-Dade locations including 5+ cameras, specific coastal underpasses, traffic corridors, and zones.
+- **Scoring Engine:** A function `calculateZoneRisk(zone)` that looks at active weather, nearby sewer levels, and traffic speeds to output a normalized `0-1` score, returning an explanation string.
+- **Verification Engine:** A routine checking unverified incidents. Requires e.g., (Webcam AI > 80% + Sewer Spike) to upgrade an incident status to VERIFIED.
+- **Demo Scenario Staging:** Rather than triggering everything at once, [setDemoMode(true)](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/services/MockDataService.ts#50-58) will start a tick ticker (`scenarioStage`), slowly raising water levels over ~5 ticks, then triggering traffic, then AI webcams, before issuing alerts in front of the user.
+
+### **3. Explicit API Routes**
+Add structured GET endpoints under `src/app/api/...` instead of relying solely on the SSE dump. The frontend will fetch initial state via standard REST, and use SSE for delta or full-state updates.
+- `/api/zones`, `/api/incidents`, `/api/alerts`, `/api/demo`
+
+### **4. UI Updates**
+Modify [IncidentDetailPanel](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/components/IncidentDetailPanel.tsx#12-122), [ClaimsView](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/app/claims/page.tsx#8-151), and [AlertsView](file:///Users/nileshtailor/Hackathon/MacroHard/floodwatch-ai/src/app/alerts/page.tsx#7-71) to parse the new models and visibly display the `explanation` logic on UI components so the user understands *why* the AI took an action.
+
+## Verification
+- Start the app, open dashboard.
+- Press 'Demo Mode'.
+- Observe the timeline: first risk scores increase with rain, then traffic slows, then cameras trigger, resulting in a VERIFIED incident popup.
