@@ -41,34 +41,53 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     // Initial fetch to paint UI immediately
-    fetch('/api/operations')
-      .then(res => res.json())
-      .then(data => setState(data))
-      .catch(console.error);
-
-    const eventSource = new EventSource('/api/events');
-
-    eventSource.onopen = () => {
-      setIsConnected(true);
+    const fetchInitial = () => {
+      fetch('/api/operations')
+        .then(res => res.json())
+        .then(data => setState(data))
+        .catch(console.error);
     };
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        setState(data);
-      } catch (err) {
-        console.error('Failed to parse SSE message', err);
-      }
+    fetchInitial();
+
+    let eventSource: EventSource | null = null;
+    let retryTimeout: NodeJS.Timeout;
+
+    const connect = () => {
+      if (eventSource) eventSource.close();
+      
+      eventSource = new EventSource('/api/events');
+
+      eventSource.onopen = () => {
+        setIsConnected(true);
+        console.log('[SSE] Connected');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          setState(data);
+        } catch (err) {
+          console.error('Failed to parse SSE message', err);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        setIsConnected(false);
+        console.warn('[SSE] Connection lost, retrying in 3s...', err);
+        eventSource?.close();
+        
+        // Reconnect after 3 seconds
+        clearTimeout(retryTimeout);
+        retryTimeout = setTimeout(connect, 3000);
+      };
     };
 
-    eventSource.onerror = (err) => {
-      console.error('SSE Error', err);
-      setIsConnected(false);
-      eventSource.close();
-    };
+    connect();
 
     return () => {
-      eventSource.close();
+      if (eventSource) eventSource.close();
+      clearTimeout(retryTimeout);
     };
   }, []);
 

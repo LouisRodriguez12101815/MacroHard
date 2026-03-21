@@ -49,6 +49,11 @@ export class MockDataService {
       { id: 'zone-1', name: 'Downtown / Brickell', boundaries: [], riskScore: 0.1, riskLevel: 'SAFE', explanation: 'Conditions are nominal.', traces: [] },
       { id: 'zone-2', name: 'Miami Beach / Coastal', boundaries: [], riskScore: 0.05, riskLevel: 'SAFE', explanation: 'Tide levels and weather are normal.', traces: [] },
     ];
+
+    // Start central background ticking (once per singleton)
+    setInterval(() => {
+      this.tick().catch(err => console.error('[MockDataService] Tick error:', err));
+    }, 5000);
   }
 
   public static getInstance(): MockDataService {
@@ -278,4 +283,3 @@ export class MockDataService {
     ];
   }
 }
-
