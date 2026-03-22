@@ -185,23 +185,20 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ── CAMERA TAB ── */}
+          {/* ── CAMERA TAB — OSM Satellite/Street View ── */}
           {mobileTab === 'camera' && (
             <div className="h-full flex flex-col">
-              {/* Google Street View Embed — YVE Hotel / Biscayne Blvd */}
               <div className="flex-1 min-h-0 relative bg-black">
                 <iframe
-                  src={`https://www.google.com/maps/embed/v1/streetview?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&location=25.7748,-80.1887&heading=210&pitch=-5&fov=90`}
+                  src="https://www.openstreetmap.org/export/embed.html?bbox=-80.1920,25.7730,-80.1855,25.7765&layer=mapnik&marker=25.7748,-80.1887"
                   className="w-full h-full border-0"
-                  title="Street View — YVE Hotel Miami / Biscayne Blvd"
-                  allowFullScreen
+                  title="OpenStreetMap — YVE Hotel Miami / Biscayne Blvd"
                   loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
                 />
                 {/* Overlay badges */}
                 <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm rounded-md px-2 py-1 pointer-events-none">
-                  <Camera className="w-3 h-3 text-orange-500" />
-                  <span className="text-[9px] font-mono text-orange-400">STREET VIEW</span>
+                  <MapPin className="w-3 h-3 text-orange-500" />
+                  <span className="text-[9px] font-mono text-orange-400">STREET MAP</span>
                 </div>
                 <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-md px-2 py-1 pointer-events-none">
                   <span className="text-[9px] font-mono text-slate-400">{mobileTime}</span>
@@ -212,9 +209,9 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[10px] font-bold text-white">Biscayne Blvd & NE 2nd St</div>
-                    <div className="text-[9px] text-slate-500">YVE Hotel Miami · Interactive 360° View</div>
+                    <div className="text-[9px] text-slate-500">YVE Hotel Miami · 146 Biscayne Blvd</div>
                   </div>
-                  <div className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400">360°</div>
+                  <div className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400">OSM</div>
                 </div>
               </div>
             </div>
