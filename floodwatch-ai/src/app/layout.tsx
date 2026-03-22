@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { RealtimeProvider } from "@/context/RealtimeContext";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -29,6 +31,8 @@ export default function RootLayout({
             {children}
           </AppShell>
         </RealtimeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

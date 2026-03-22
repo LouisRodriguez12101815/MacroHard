@@ -12,6 +12,8 @@
     "@google/generative-ai": "^0.24.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/leaflet": "^1.9.21",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "@vis.gl/react-google-maps": "^1.7.1",
     "better-sqlite3": "^12.8.0",
     "clsx": "^2.1.1",
