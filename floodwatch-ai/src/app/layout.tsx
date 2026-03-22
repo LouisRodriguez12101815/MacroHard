@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { RealtimeProvider } from "@/context/RealtimeContext";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "FloodWatch AI | Miami-Dade County",
@@ -24,6 +25,7 @@ export default function RootLayout({
             {children}
           </AppShell>
         </RealtimeProvider>
+        <Analytics />
       </body>
     </html>
   );
