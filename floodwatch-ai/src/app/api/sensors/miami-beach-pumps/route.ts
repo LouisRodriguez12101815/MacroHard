@@ -55,7 +55,7 @@ export async function GET() {
     const onlineCount = pumps.filter((p: any) => p.isOnline).length;
     const offlineCount = pumps.filter((p: any) => !p.isOnline).length;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       source: 'Miami Beach GIS — Stormwater Pump Stations',
       fetchedAt: new Date().toISOString(),
       total: pumps.length,
@@ -63,6 +63,8 @@ export async function GET() {
       offline: offlineCount,
       pumps,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch (err) {
     console.error('[API /sensors/miami-beach-pumps] Error:', err);
     return NextResponse.json(

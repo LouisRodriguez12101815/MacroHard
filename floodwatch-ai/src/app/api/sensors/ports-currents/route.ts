@@ -32,5 +32,7 @@ export async function GET() {
     };
   }));
 
-  return NextResponse.json({ source: 'NOAA PORTS Miami Current Meters', fetchedAt: new Date().toISOString(), stations: results });
+  const response = NextResponse.json({ source: 'NOAA PORTS Miami Current Meters', fetchedAt: new Date().toISOString(), stations: results });
+  response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  return response;
 }

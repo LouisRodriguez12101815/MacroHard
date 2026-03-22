@@ -23,10 +23,12 @@ export async function GET() {
   const wl = waterLevel?.data?.[0];
   const wi = wind?.data?.[0];
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     station: { id: STATION_ID, name: 'Miami Beach', lat: 25.7685, lng: -80.1317 },
     fetchedAt: new Date().toISOString(),
     waterLevel: wl ? { value: parseFloat(wl.v), unit: 'ft', timestamp: wl.t } : null,
     wind: wi ? { speed: parseFloat(wi.s), direction: parseFloat(wi.d), gusts: parseFloat(wi.g), timestamp: wi.t } : null,
   });
+  response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  return response;
 }

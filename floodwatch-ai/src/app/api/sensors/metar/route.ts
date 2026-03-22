@@ -28,5 +28,7 @@ export async function GET() {
     } catch { return { stationId: id, status: 'offline' }; }
   }));
 
-  return NextResponse.json({ source: 'Aviation Weather METAR', fetchedAt: new Date().toISOString(), stations: results });
+  const response = NextResponse.json({ source: 'Aviation Weather METAR', fetchedAt: new Date().toISOString(), stations: results });
+  response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300');
+  return response;
 }

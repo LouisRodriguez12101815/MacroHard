@@ -37,24 +37,30 @@ export function Sidebar({ mobileView, onToggleMobile }: { mobileView?: boolean; 
 
   // Mobile bottom bar mode
   if (mobileView) {
+    // Show fewer nav items in mobile: Operations, Claims, Diagnostics + Demo + Desktop
+    const mobileNavItems = [
+      navItems[0], // Operations Map
+      navItems[2], // Claims Intel
+      navItems[3], // Diagnostics
+    ];
     return (
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 px-1 py-1 flex items-center justify-between overflow-x-auto" style={{ height: 56 }}>
-        {navItems.map((item) => {
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-sm border-t border-slate-800 flex items-center justify-around" style={{ height: 52 }}>
+        {mobileNavItems.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link key={item.href} href={item.href} className={cn("flex flex-col items-center py-1 px-1.5 rounded-md shrink-0", isActive ? 'text-orange-500' : 'text-slate-500')}>
+            <Link key={item.href} href={item.href} className={cn("flex flex-col items-center justify-center py-1 min-w-0 flex-1", isActive ? 'text-orange-500' : 'text-slate-500')}>
               <item.icon className="w-4 h-4" />
-              <span className="text-[8px] mt-0.5 leading-tight">{item.name.split(' ')[0]}</span>
+              <span className="text-[7px] mt-0.5 leading-tight truncate">{item.name.split(' ')[0]}</span>
             </Link>
           );
         })}
-        <button onClick={() => toggleDemoMode(!state.isDemoMode)} className={cn("flex flex-col items-center py-1 px-1.5 rounded-md shrink-0", state.isDemoMode ? 'text-red-500' : 'text-slate-500')}>
+        <button onClick={() => toggleDemoMode(!state.isDemoMode)} className={cn("flex flex-col items-center justify-center py-1 min-w-0 flex-1", state.isDemoMode ? 'text-red-500' : 'text-slate-500')}>
           {state.isDemoMode ? <StopCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
-          <span className="text-[8px] mt-0.5 leading-tight">{state.isDemoMode ? 'Stop' : 'Demo'}</span>
+          <span className="text-[7px] mt-0.5 leading-tight">{state.isDemoMode ? 'Stop' : 'Demo'}</span>
         </button>
-        <button onClick={onToggleMobile} className="flex flex-col items-center py-1 px-1.5 rounded-md text-slate-500 shrink-0">
+        <button onClick={onToggleMobile} className="flex flex-col items-center justify-center py-1 min-w-0 flex-1 text-slate-500">
           <Monitor className="w-4 h-4" />
-          <span className="text-[8px] mt-0.5 leading-tight">Desktop</span>
+          <span className="text-[7px] mt-0.5 leading-tight">Desktop</span>
         </button>
       </nav>
     );

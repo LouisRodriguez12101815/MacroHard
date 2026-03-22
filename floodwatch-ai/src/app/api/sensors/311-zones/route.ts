@@ -55,13 +55,15 @@ export async function GET() {
       fetchLayer(12, 'Flood Zone'),
     ]);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       source: 'Miami-Dade 311 CRM Display MapServer',
       fetchedAt: new Date().toISOString(),
       bbox: BBOX,
       stormSurge,
       floodZone,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=7200');
+    return response;
   } catch (err) {
     console.error('[API /sensors/311-zones] Error:', err);
     return NextResponse.json(

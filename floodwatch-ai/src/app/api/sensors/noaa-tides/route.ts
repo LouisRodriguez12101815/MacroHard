@@ -50,7 +50,7 @@ export async function GET() {
     const pr = pressure?.data?.[0];
     const pred = predictions?.predictions?.[0];
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       station: {
         id: STATION_ID,
         name: 'Virginia Key, Biscayne Bay',
@@ -94,6 +94,8 @@ export async function GET() {
         type: 'predicted',
       } : null,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch (err) {
     console.error('[API /sensors/noaa-tides] Error:', err);
     return NextResponse.json(

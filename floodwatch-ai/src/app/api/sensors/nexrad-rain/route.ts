@@ -93,11 +93,13 @@ export async function GET() {
   try {
     const results = await Promise.all(QUERY_POINTS.map(fetchRainForPoint));
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       source: 'SFWMD NEXRAD Rain Grid (2km resolution)',
       fetchedAt: new Date().toISOString(),
       areas: results,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300');
+    return response;
   } catch (err) {
     console.error('[API /sensors/nexrad-rain] Error:', err);
     return NextResponse.json(

@@ -38,12 +38,14 @@ export async function GET() {
     const data = await res.json();
     const features = data.features || [];
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       source: 'Miami-Dade WASD GIS',
       fetchedAt: new Date().toISOString(),
       count: features.length,
       features: features,
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    return response;
   } catch (err) {
     console.error('[API /sensors/sewer] Fetch error:', err);
     return NextResponse.json(

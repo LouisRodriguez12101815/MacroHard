@@ -7,7 +7,7 @@ import { useMobileView } from '@/components/AppShell';
 import { IncidentQueue } from '@/components/IncidentQueue';
 import { IncidentDetailPanel } from '@/components/IncidentDetailPanel';
 import { FloodMap } from '@/components/FloodMap';
-import { Shield, PlayCircle, Activity, ChevronRight, StopCircle } from 'lucide-react';
+import { Shield, PlayCircle, Activity, ChevronRight, StopCircle, MapPin, Camera, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
@@ -94,100 +94,186 @@ export default function Dashboard() {
     return () => clearInterval(intv);
   }, [mobileView]);
 
+  // ── Mobile Tab State ────────────────────────────────────────────────────────
+  const [mobileTab, setMobileTab] = useState<'map' | 'camera' | 'sensors'>('map');
+
   if (mobileView) {
     const currentSensor = mobileSensors[activeSensorIdx];
     return (
-      <div className="flex flex-col h-full bg-slate-950">
+      <div className="flex flex-col h-full bg-slate-950 pb-14">
         {/* Compact header */}
-        <div className="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div className="px-3 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5" style={{ color: '#FF5F00' }} />
-            <span className="text-sm font-bold text-white">FloodWatch AI</span>
+            <Shield className="w-4 h-4" style={{ color: '#FF5F00' }} />
+            <span className="text-xs font-bold text-white">FloodWatch AI</span>
           </div>
           <div className="flex items-center gap-2">
-            {!state.isDemoMode ? (
-              <button onClick={() => toggleDemoMode(true)} className="px-3 py-1.5 text-[10px] font-bold text-white rounded-md" style={{ background: 'linear-gradient(135deg, #EB001B, #FF5F00)' }}>DEMO</button>
-            ) : (
-              <button onClick={() => toggleDemoMode(false)} className="px-3 py-1.5 text-[10px] font-bold text-red-400 rounded-md bg-red-500/10 border border-red-500/20">STOP</button>
-            )}
-            <span className="text-[10px] font-mono text-slate-500">{mobileTime}</span>
-          </div>
-        </div>
-
-        {/* Location banner */}
-        <div className="px-4 py-2 bg-slate-900/50 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_4px_#10b981]" />
-            <span className="text-xs text-slate-400">Monitoring:</span>
-            <span className="text-xs font-bold text-white">YVE Hotel Miami</span>
-          </div>
-          <p className="text-[10px] text-slate-600 mt-0.5">146 Biscayne Blvd, Miami, FL 33132 · 25.7748°N, 80.1887°W</p>
-        </div>
-
-        {/* Camera feed placeholder */}
-        <div className="mx-4 mt-3 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 relative" style={{ height: 200 }}>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-slate-700 text-xs font-mono mb-2">LIVE FEED — CAM-BISCAYNE-01</div>
-            <div className="w-16 h-16 rounded-full border-2 border-slate-700 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="1.5">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                <circle cx="12" cy="13" r="3" />
-              </svg>
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_4px_#10b981]" />
+              <span className="text-[9px] text-slate-500">LIVE</span>
             </div>
-            <div className="text-[10px] text-slate-600 mt-2">Biscayne Blvd & NE 2nd St</div>
+            <span className="text-[9px] font-mono text-slate-600">{mobileTime}</span>
           </div>
-          {/* Scan line animation */}
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent animate-pulse" />
-          <div className="absolute bottom-2 left-3 text-[9px] font-mono text-emerald-500/60">REC ●</div>
-          <div className="absolute bottom-2 right-3 text-[9px] font-mono text-slate-600">{mobileTime}</div>
         </div>
 
-        {/* Rotating sensor card */}
-        <div className="mx-4 mt-3 flex-1 flex flex-col min-h-0">
-          {/* Active sensor — big card */}
-          <div className="rounded-xl border p-4 transition-all duration-500" style={{ borderColor: currentSensor.color + '44', background: currentSensor.color + '08' }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{currentSensor.icon}</span>
-                <div>
-                  <div className="text-sm font-bold text-white">{currentSensor.name}</div>
-                  <div className="text-[10px] text-slate-500">{currentSensor.location}</div>
+        {/* Location + Tab Switcher */}
+        <div className="px-3 py-1.5 bg-slate-900/60 border-b border-slate-800 shrink-0">
+          <div className="flex items-center justify-between mb-1.5">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 text-orange-500" />
+                <span className="text-[11px] font-bold text-white">YVE Hotel Miami</span>
+              </div>
+              <p className="text-[9px] text-slate-600 ml-[18px]">146 Biscayne Blvd · 25.7748°N, 80.1887°W</p>
+            </div>
+            {!state.isDemoMode ? (
+              <button onClick={() => toggleDemoMode(true)} className="px-2.5 py-1 text-[9px] font-bold text-white rounded-md" style={{ background: 'linear-gradient(135deg, #EB001B, #FF5F00)' }}>DEMO</button>
+            ) : (
+              <button onClick={() => toggleDemoMode(false)} className="px-2.5 py-1 text-[9px] font-bold text-red-400 rounded-md bg-red-500/10 border border-red-500/20 animate-pulse">⚠ STOP</button>
+            )}
+          </div>
+          {/* Tab bar */}
+          <div className="flex gap-1">
+            {[
+              { id: 'map' as const, label: 'Map', icon: MapPin },
+              { id: 'camera' as const, label: 'Camera', icon: Camera },
+              { id: 'sensors' as const, label: 'Sensors', icon: Radio },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setMobileTab(tab.id)}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-bold transition-all',
+                  mobileTab === tab.id
+                    ? 'text-white shadow-md'
+                    : 'text-slate-500 bg-slate-800/50 hover:text-slate-300'
+                )}
+                style={mobileTab === tab.id ? { background: 'linear-gradient(135deg, #EB001B, #FF5F00)' } : undefined}
+              >
+                <tab.icon className="w-3 h-3" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab content — fills remaining space */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+
+          {/* ── MAP TAB ── */}
+          {mobileTab === 'map' && (
+            <div className="h-full flex flex-col">
+              <div className="flex-1 min-h-0">
+                <FloodMap
+                  onIncidentSelect={setSelectedIncidentId}
+                  selectedIncidentId={selectedIncidentId}
+                />
+              </div>
+              {/* Compact fusion score strip */}
+              <div className="px-3 py-2 bg-slate-900 border-t border-slate-800 shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Flood Index</span>
+                  <div className="flex gap-1 flex-1">
+                    {mobileSensors.slice(0, 4).map((s, i) => (
+                      <div key={i} className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: s.color + '40' }}>
+                        <div className="h-full rounded-full transition-all" style={{ backgroundColor: s.color, width: s.value === 'Loading...' ? '10%' : '60%' }} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="text-[10px] font-mono px-2 py-0.5 rounded-full" style={{ color: currentSensor.color, background: currentSensor.color + '15' }}>
-                LIVE
+            </div>
+          )}
+
+          {/* ── CAMERA TAB ── */}
+          {mobileTab === 'camera' && (
+            <div className="h-full flex flex-col">
+              {/* Google Street View Embed — YVE Hotel / Biscayne Blvd */}
+              <div className="flex-1 min-h-0 relative bg-black">
+                <iframe
+                  src={`https://www.google.com/maps/embed/v1/streetview?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&location=25.7748,-80.1887&heading=210&pitch=-5&fov=90`}
+                  className="w-full h-full border-0"
+                  title="Street View — YVE Hotel Miami / Biscayne Blvd"
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                {/* Overlay badges */}
+                <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm rounded-md px-2 py-1 pointer-events-none">
+                  <Camera className="w-3 h-3 text-orange-500" />
+                  <span className="text-[9px] font-mono text-orange-400">STREET VIEW</span>
+                </div>
+                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm rounded-md px-2 py-1 pointer-events-none">
+                  <span className="text-[9px] font-mono text-slate-400">{mobileTime}</span>
+                </div>
+              </div>
+              {/* Location info strip */}
+              <div className="px-3 py-2 bg-slate-900 border-t border-slate-800 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] font-bold text-white">Biscayne Blvd & NE 2nd St</div>
+                    <div className="text-[9px] text-slate-500">YVE Hotel Miami · Interactive 360° View</div>
+                  </div>
+                  <div className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400">360°</div>
+                </div>
               </div>
             </div>
-            <div className="text-lg font-mono font-bold" style={{ color: currentSensor.color }}>
-              {currentSensor.value}
-            </div>
-          </div>
+          )}
 
-          {/* Sensor dots indicator */}
-          <div className="flex justify-center gap-1.5 mt-3">
-            {mobileSensors.map((_, i) => (
-              <div
-                key={i}
-                className={`rounded-full transition-all duration-300 ${i === activeSensorIdx ? 'w-4 h-1.5' : 'w-1.5 h-1.5'}`}
-                style={{ backgroundColor: i === activeSensorIdx ? mobileSensors[i].color : '#334155' }}
-              />
-            ))}
-          </div>
-
-          {/* Mini sensor list */}
-          <div className="mt-3 space-y-1 overflow-y-auto flex-1 pb-2">
-            {mobileSensors.map((s, i) => (
-              <div
-                key={i}
-                onClick={() => setActiveSensorIdx(i)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${i === activeSensorIdx ? 'bg-slate-800 border border-slate-700' : 'opacity-60'}`}
-              >
-                <span className="text-sm">{s.icon}</span>
-                <span className="text-[11px] text-slate-300 flex-1">{s.name}</span>
-                <span className="text-[10px] font-mono" style={{ color: s.color }}>{s.value === 'Loading...' ? '...' : s.value.substring(0, 20)}</span>
+          {/* ── SENSORS TAB ── */}
+          {mobileTab === 'sensors' && (
+            <div className="h-full flex flex-col px-3 pt-2">
+              {/* Active sensor — big card */}
+              <div className="rounded-xl border p-3 transition-all duration-500 shrink-0" style={{ borderColor: currentSensor.color + '44', background: currentSensor.color + '08' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{currentSensor.icon}</span>
+                    <div>
+                      <div className="text-xs font-bold text-white">{currentSensor.name}</div>
+                      <div className="text-[9px] text-slate-500">{currentSensor.location}</div>
+                    </div>
+                  </div>
+                  <div className="text-[9px] font-mono px-2 py-0.5 rounded-full" style={{ color: currentSensor.color, background: currentSensor.color + '15' }}>
+                    LIVE
+                  </div>
+                </div>
+                <div className="text-base font-mono font-bold" style={{ color: currentSensor.color }}>
+                  {currentSensor.value}
+                </div>
               </div>
-            ))}
-          </div>
+
+              {/* Sensor dots indicator */}
+              <div className="flex justify-center gap-1.5 mt-2 shrink-0">
+                {mobileSensors.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-full transition-all duration-300 ${i === activeSensorIdx ? 'w-4 h-1.5' : 'w-1.5 h-1.5'}`}
+                    style={{ backgroundColor: i === activeSensorIdx ? mobileSensors[i].color : '#334155' }}
+                  />
+                ))}
+              </div>
+
+              {/* Mini sensor list */}
+              <div className="mt-2 space-y-1 overflow-y-auto flex-1 min-h-0 pb-1">
+                {mobileSensors.map((s, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setActiveSensorIdx(i)}
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all',
+                      i === activeSensorIdx ? 'bg-slate-800 border border-slate-700' : 'opacity-60'
+                    )}
+                  >
+                    <span className="text-sm">{s.icon}</span>
+                    <span className="text-[10px] text-slate-300 flex-1 truncate">{s.name}</span>
+                    <span className="text-[9px] font-mono truncate max-w-[100px]" style={{ color: s.color }}>
+                      {s.value === 'Loading...' ? '...' : s.value.substring(0, 22)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -8,7 +8,7 @@
       "endpoint": "https://gisweb.miamidade.gov/arcgis/rest/services/Wasd/WASDSewerPumpStationBasins_2_v1/MapServer/0/query",
       "pollingMs": 5000,
       "auth": "none",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "fdot-cameras",

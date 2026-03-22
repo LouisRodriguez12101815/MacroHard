@@ -51,7 +51,7 @@ export async function GET() {
     const d = json.data;
     const iaqi = d.iaqi || {};
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       station: {
         id: `waqi-${WAQI_STATION_ID}`,
         name: d.city?.name || 'Miami Fire Station #5',
@@ -74,6 +74,8 @@ export async function GET() {
         so2: iaqi.so2?.v ?? null,
       },
     });
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
   } catch (err) {
     console.error('[API /sensors/air-quality] Error:', err);
     return NextResponse.json(
